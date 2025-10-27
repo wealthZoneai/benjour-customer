@@ -1,11 +1,10 @@
-import { useDispatch } from "react-redux";
-import "./App.css";
-import { decrement, increment, incrementByAmount } from "./utils/counterSlice";
-import { useState } from "react";
 
-function App() {
-const dispatch = useDispatch()
-const [count, setCount] = useState(0);
+import { useSelector, useDispatch } from "react-redux";
+import { increment, decrement, incrementByAmount } from "../utils/counterSlice";
+
+function Counter() {
+  const count = useSelector((state) => state.counter.value);
+  const dispatch = useDispatch();
 
   return (
     <div className="p-4">
@@ -29,8 +28,7 @@ const [count, setCount] = useState(0);
         +5
       </button>
     </div>
-
   );
 }
 
-export default App;
+export default Counter;
