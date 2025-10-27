@@ -4,6 +4,8 @@ import Register from "./pages/Register";
 import "./App.css";
 
 function App() {
+
+
   return (
     <div>
       <nav className="p-4 bg-gray-100 flex gap-4 justify-center">
