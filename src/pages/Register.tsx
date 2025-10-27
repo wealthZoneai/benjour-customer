@@ -32,7 +32,7 @@ const Register = () => {
 
       <div className="backdrop-blur-sm bg-white/30 shadow-xl rounded-2xl max-w-md w-full p-8 text-gray-800">
         <h1 className="text-2xl font-semibold mb-2 text-center">
-          Welcome Back 👋
+          Sign Up
         </h1>
         <p className="text-center text-gray-700 mb-6">
           Today is a new day. It’s your day. You shape it.
