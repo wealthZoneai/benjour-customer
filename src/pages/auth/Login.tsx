@@ -218,7 +218,7 @@ const Login: React.FC = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold text-sm shadow-md transition-all duration-300"
+            className="w-full bg-linear-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold text-sm shadow-md transition-all duration-300"
           >
             {isLogin ? 'Login' : 'Register'}
           </button>

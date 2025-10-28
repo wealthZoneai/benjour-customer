@@ -29,7 +29,7 @@ const Register = () => {
       }}
     >
       {/* 🔹 Dark Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/75 to-black/90"></div>
+      <div className="absolute inset-0 bg-linear-to-b from-black/80 via-black/75 to-black/90"></div>
 
       {/* 🔹 Register Card */}
       <div className="relative z-10 w-full max-w-md mx-4 p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl text-white">
@@ -122,7 +122,7 @@ const Register = () => {
               {/* Register Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold text-sm shadow-md transition-all duration-300"
+                className="w-full bg-linear-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold text-sm shadow-md transition-all duration-300"
               >
                 Register
               </button>
