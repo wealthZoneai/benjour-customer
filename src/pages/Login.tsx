@@ -30,7 +30,7 @@ const Login = () => {
     >
       <div className="backdrop-blur-sm bg-white/30 shadow-xl rounded-2xl max-w-md w-full p-8 text-gray-800">
         <h1 className="text-2xl font-semibold mb-2 text-center">
-          Login In
+          Log In
         </h1>
         <p className="text-center text-gray-700 mb-6">
           Let’s get you signed in to continue your journey.
