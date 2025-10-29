@@ -40,6 +40,7 @@ const Login: React.FC = () => {
         alert("Please fill all fields");
         return;
       }
+      navigate('/home');
       alert("Login successful!");
     } else {
       // Handle register

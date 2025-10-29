@@ -137,8 +137,6 @@ const Grocery: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };
