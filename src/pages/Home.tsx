@@ -6,7 +6,9 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-gray-900 to-gray-700 text-white">
-      <h1 className="text-4xl md:text-5xl font-bold mb-12">Welcome to the Store</h1>
+      <h1 className="text-4xl md:text-5xl font-bold mb-12 text-center">
+        Welcome to the Store
+      </h1>
 
       <div className="flex flex-col md:flex-row gap-6">
         <button

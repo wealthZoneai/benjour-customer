@@ -6,6 +6,15 @@ import Home from "./pages/Home";
 import Grocery from "./pages/Grocery/GroceryDashboard";
 import Alcohol from "./pages/Alcohol/AlcoholDashboard";
 
+import RumPage from "./pages/Alcohol/Rumpage";
+import WinePage from "./pages/Alcohol/WinePage";
+import LiqueurPage from "./pages/Alcohol/LiqueursPage";
+import VodkaPage from "./pages/Alcohol/VodkaPage";
+import TequilaPage from "./pages/Alcohol/TequilaPage";
+import WhiskyPage from "./pages/Alcohol/WhiskyPage";
+import BeerPage from "./pages/Alcohol/BeerPage";
+import BrandyPage from "./pages/Alcohol/BrandyPage";
+
 function App() {
 
 
@@ -17,6 +26,15 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/grocery-dashboard" element={<Grocery />} />
         <Route path="/alcohol-dashboard" element={<Alcohol />} />
+        <Route path="/wine" element={<WinePage/>} />
+        <Route path="/rum" element={<RumPage />} />
+        <Route path="/liqueurs" element={<LiqueurPage />} />
+        <Route path="/vodka" element={<VodkaPage />} />
+        <Route path="/tequila" element={<TequilaPage />} />
+        <Route path="/whisky" element={<WhiskyPage />} />
+        <Route path="/beer" element={<BeerPage />} />
+        <Route path="/brandy" element={<BrandyPage />} />
+
       </Routes>
     </div>
   );
