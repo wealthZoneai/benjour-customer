@@ -155,7 +155,8 @@ const AlcoholItems: React.FC = () => {
           {categoryProducts.map((product) => (
             <ProductCard
               key={product.id}
-              title={product.name}
+              id={product.id}
+              name={product.name}
               category={product.category}
               price={product.price}
               image={product.image}

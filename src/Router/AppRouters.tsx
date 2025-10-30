@@ -5,7 +5,7 @@ import Layout from "../pages/Layout";
 import Home from "../pages/HomeScreen/Home";
 import Grocery from "../pages/Grocery/Grocery";
 import AlcoholDashboard from "../pages/Alcohol/AlcoholDashboard";
-import AlcoholItems from "../pages/Alcohol/Alcoholitems";
+import AlcoholItems from "../pages/Alcohol/AlcoholItems";
 import ScrollToTop from "../components/ScrollToTop";
 import GroceryItems from "../pages/Grocery/GroceryItems";
 

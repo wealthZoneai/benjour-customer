@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import GroceriesBanner from "./GroceriesBanner";
 import { ChevronRight } from "lucide-react";
-import Footer from "../../components/Footer";
 
 const categories = [
   {

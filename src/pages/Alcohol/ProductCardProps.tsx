@@ -1,43 +1,63 @@
 import React, { useState } from "react";
 import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { addToCart } from "../../Redux/cartSlice";
+import toast from "react-hot-toast";
 
 interface ProductCardProps {
-  title: string;
+  id: number;
+  name: string;
   price: number;
   image: string;
   discount?: number;
   rating?: number;
   category: string;
-  onAddToCart?: () => void;
-  onViewDetails?: () => void; // ✅ NEW prop
+  onViewDetails?: () => void;
 }
 
 const GlassProductCard: React.FC<ProductCardProps> = ({
+  id,
+  name,
   image,
-  title,
   category,
   price,
   discount = 10,
   rating = 4,
-  onAddToCart,
-  onViewDetails, // ✅ use this for modal
+  onViewDetails,
 }) => {
   const [liked, setLiked] = useState(false);
   const [quantity, setQuantity] = useState(0);
+  const dispatch = useDispatch();
+
+  const handleAddToCart = () => {
+    if (quantity < 1) {
+      toast.error("Please select at least 1 item");
+      return;
+    }
+
+    dispatch(
+      addToCart({
+        id,
+        name,
+        image,
+        price,
+        quantity,
+      })
+    );
+
+    toast.success(`${name} added to your cart 🛒`);
+  };
 
   return (
     <div className="relative group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
-      {/* Subtle Glow */}
       <div className="absolute inset-0 bg-linear-to-br from-blue-50/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none" />
 
-      {/* Discount Badge */}
       {discount > 0 && (
         <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-md shadow-sm z-10">
           -{discount}%
         </div>
       )}
 
-      {/* Wishlist / Heart */}
       <button
         onClick={() => setLiked(!liked)}
         className={`absolute top-3 right-3 z-10 transition-all duration-300 ${
@@ -47,28 +67,25 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
         <Heart size={18} className={liked ? "fill-red-500 text-red-500" : ""} />
       </button>
 
-      {/* Product Image */}
       <div className="relative w-full h-44 bg-gray-100 flex items-center justify-center overflow-hidden">
         <img
           src={image}
-          alt={title}
+          alt={name}
           className="object-fit w-full h-full transition-transform duration-500 group-hover:scale-105"
         />
       </div>
 
-      {/* Product Info */}
       <div className="px-4 py-3 text-center">
         <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">
           {category}
         </p>
         <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate">
-          {title}
+          {name}
         </h3>
         <p className="text-blue-700 font-semibold mt-0.5 text-sm">
           ${price.toFixed(2)}
         </p>
 
-        {/* Rating */}
         <div className="flex justify-center mt-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <span
@@ -80,9 +97,7 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
           ))}
         </div>
 
-        {/* Buttons */}
         <div className="flex flex-col gap-2">
-          {/* Quantity + Add to Cart */}
           <div className="flex items-center justify-between bg-gray-50 rounded-full px-2.5 py-1.5">
             <div className="flex items-center gap-1.5">
               <button
@@ -103,14 +118,13 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
             </div>
 
             <button
-              onClick={onAddToCart}
+              onClick={handleAddToCart}
               className="bg-linear-to-r from-blue-600 to-indigo-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-md hover:from-blue-700 hover:to-indigo-600 transition-all duration-300 flex items-center gap-1"
             >
               <ShoppingCart size={12} /> Add
             </button>
           </div>
 
-          {/* ✅ Details Button */}
           <button
             onClick={onViewDetails}
             className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline transition-all"

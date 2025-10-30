@@ -21,7 +21,7 @@ password: Yup.string()
 .required("Password is required"),
 });
 
-const handleSubmit = (values: any) => {
+const handleSubmit = () => {
 // console.log("Form Data:", values);
 alert("Registered Successfully!");
 };
