@@ -22,7 +22,7 @@ password: Yup.string()
 });
 
 const handleSubmit = (values: any) => {
-console.log("Form Data:", values);
+// console.log("Form Data:", values);
 alert("Registered Successfully!");
 };
 

@@ -49,7 +49,7 @@ const HomeBanner: React.FC = () => {
         );
         setBannerData(response.length ? response : [fallbackBanner]);
       } catch (err) {
-        console.error("Error fetching banner data:", err);
+        // console.error("Error fetching banner data:", err);
         setBannerData([fallbackBanner]);
       }
     };
@@ -145,7 +145,7 @@ const HomeBanner: React.FC = () => {
       </video>
 
       {/* ✅ Gradient Overlay */}
-      <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-black/80 via-black/40 to-transparent z-20"></div>
+      <div className="absolute inset-0 rounded-3xl bg-linear-to-r from-black/80 via-black/40 to-transparent z-20"></div>
 
       {/* ✅ Text Content */}
       <div className="absolute bottom-8 left-6 sm:left-12 text-white animate-fade-up z-30">

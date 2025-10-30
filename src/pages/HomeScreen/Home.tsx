@@ -1,7 +1,6 @@
 import React from "react";
 import { useOutletContext } from "react-router-dom";
 import HomeBanner from "./HomeBanner";
-import MainContent from "./MainContent";
 import CategoriesScreen from "./CategoriesScreen";
 
 interface LayoutContext {

@@ -84,7 +84,7 @@ const Grocery: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen mt-10 bg-linear-to-br  from-gray-50 via-white to-gray-50">
       <GroceriesBanner />
 
       {/* Shop by Category */}

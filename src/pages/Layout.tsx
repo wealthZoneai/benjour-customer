@@ -11,7 +11,7 @@ const Layout: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Header onSearchChange={setSearchQuery} />
 
-      <main className="flex-grow">
+      <main className="grow">
         <Outlet context={{ searchQuery }} />
       </main>
 

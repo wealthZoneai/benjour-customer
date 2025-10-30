@@ -34,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
   const handleAddToCart = () => {
     onAddToCart(product.id);
     // In a full app, the 'fly to cart' animation logic (using useAnimate) would go here.
-    console.log(`Product ${product.name} added. Triggering animation.`);
+    // console.log(`Product ${product.name} added. Triggering animation.`);
   };
 
   return (
@@ -55,7 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
       whileHover="hover" // Triggers the lift animation
       whileTap={{ scale: 0.98 }} 
     >
-      <div className="h-40 sm:h-full sm:w-32 overflow-hidden relative bg-gray-50 flex-shrink-0">
+      <div className="h-40 sm:h-full sm:w-32 overflow-hidden relative bg-gray-50 shrink-0">
         <img 
           src={product.imageUrl} 
           alt={product.name} 
@@ -68,7 +68,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         </button>
       </div>
 
-      <div className="p-4 flex flex-col flex-grow w-full">
+      <div className="p-4 flex flex-col grow w-full">
         <h3 className={`text-lg font-semibold mb-1 truncate ${isAlcohol ? 'text-white' : 'text-gray-900'}`}>{product.name}</h3>
         <p className={`text-sm mb-3 ${isAlcohol ? 'text-gray-400' : 'text-gray-500'}`}>{product.category}</p>
         

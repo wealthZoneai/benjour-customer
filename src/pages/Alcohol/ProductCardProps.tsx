@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
 
 interface ProductCardProps {
-  image: string;
   title: string;
-  category: string;
   price: number;
+  image: string;
   discount?: number;
   rating?: number;
+  category: string;
   onAddToCart?: () => void;
+  onViewDetails?: () => void; // ✅ NEW prop
 }
 
 const GlassProductCard: React.FC<ProductCardProps> = ({
@@ -19,6 +20,7 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
   discount = 10,
   rating = 4,
   onAddToCart,
+  onViewDetails, // ✅ use this for modal
 }) => {
   const [liked, setLiked] = useState(false);
   const [quantity, setQuantity] = useState(0);
@@ -42,10 +44,7 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
           liked ? "text-red-500 scale-110" : "text-gray-400 hover:text-red-400"
         }`}
       >
-        <Heart
-          size={18}
-          className={liked ? "fill-red-500 text-red-500" : ""}
-        />
+        <Heart size={18} className={liked ? "fill-red-500 text-red-500" : ""} />
       </button>
 
       {/* Product Image */}
@@ -53,7 +52,7 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
         <img
           src={image}
           alt={title}
-          className="object-contain w-36 h-36 transition-transform duration-500 group-hover:scale-105"
+          className="object-fit w-full h-full transition-transform duration-500 group-hover:scale-105"
         />
       </div>
 
@@ -72,37 +71,51 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
         {/* Rating */}
         <div className="flex justify-center mt-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-300"}>
+            <span
+              key={i}
+              className={i < rating ? "text-yellow-400" : "text-gray-300"}
+            >
               ★
             </span>
           ))}
         </div>
 
-        {/* Quantity + Add to Cart */}
-        <div className="flex items-center justify-between bg-gray-50 rounded-full px-2.5 py-1.5">
-          <div className="flex items-center gap-1.5">
+        {/* Buttons */}
+        <div className="flex flex-col gap-2">
+          {/* Quantity + Add to Cart */}
+          <div className="flex items-center justify-between bg-gray-50 rounded-full px-2.5 py-1.5">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setQuantity(Math.max(0, quantity - 1))}
+                className="bg-white border border-gray-200 p-1 rounded-full hover:bg-gray-100 transition-all"
+              >
+                <Minus size={10} className="text-blue-700" />
+              </button>
+              <span className="text-xs font-medium w-4 text-center text-gray-800">
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="bg-white border border-gray-200 p-1 rounded-full hover:bg-gray-100 transition-all"
+              >
+                <Plus size={10} className="text-blue-700" />
+              </button>
+            </div>
+
             <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="bg-white border border-gray-200 p-1 rounded-full hover:bg-gray-100 transition-all"
+              onClick={onAddToCart}
+              className="bg-linear-to-r from-blue-600 to-indigo-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-md hover:from-blue-700 hover:to-indigo-600 transition-all duration-300 flex items-center gap-1"
             >
-              <Minus size={10} className="text-blue-700" />
-            </button>
-            <span className="text-xs font-medium w-4 text-center text-gray-800">
-              {quantity}
-            </span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              className="bg-white border border-gray-200 p-1 rounded-full hover:bg-gray-100 transition-all"
-            >
-              <Plus size={10} className="text-blue-700" />
+              <ShoppingCart size={12} /> Add
             </button>
           </div>
 
+          {/* ✅ Details Button */}
           <button
-            onClick={onAddToCart}
-            className="bg-linear-to-r from-blue-600 to-indigo-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-md hover:from-blue-700 hover:to-indigo-600 transition-all duration-300 flex items-center gap-1"
+            onClick={onViewDetails}
+            className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline transition-all"
           >
-            <ShoppingCart size={12} /> Add
+            Details
           </button>
         </div>
       </div>
