@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import {
-  Search,
-  Heart,
-  ShoppingCart,
-  User,
-  X,
-  Trash2,
-} from "lucide-react";
+import { Search, Heart, ShoppingCart, User, X, Trash2 } from "lucide-react";
+import { FaPlus, FaMinus } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { removeFromCart, clearCart } from "../Redux/cartSlice";
+import {
+  removeFromCart,
+  increaseQuantity,
+  decreaseQuantity,
+} from "../Redux/cartSlice";
+import type { RootState } from "../Redux/store"; // ✅ added type import
 import { motion, AnimatePresence } from "framer-motion";
 
 interface HeaderProps {
@@ -23,13 +22,14 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const cart = useSelector((state: any) => state.cart.items);
-  const cartCount = cart.reduce(
-    (sum: number, item: any) => sum + item.quantity,
-    0
-  );
+  // ✅ Use proper RootState typing
+  const cart = useSelector((state: RootState) => state.cart.items);
+  const wishlist = useSelector((state: RootState) => state.wishlist.items);
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const wishlistCount = wishlist.length;
   const totalPrice = cart.reduce(
-    (sum: number, item: any) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
@@ -45,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
         {/* Logo */}
         <div
           className="text-2xl sm:text-3xl font-extrabold bg-linear-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent cursor-pointer"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
         >
           🍹 MyStore
         </div>
@@ -76,15 +76,20 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
             )}
           </button>
 
-          {/* Favorite */}
-          <button className="relative group p-2 rounded-full bg-gray-100 shadow-md hover:bg-red-50 hover:scale-110 transition-all duration-300">
+          {/* ❤️ Wishlist */}
+          <button
+            onClick={() => navigate("/wishlist")}
+            className="relative group p-2 rounded-full bg-gray-100 shadow-md hover:bg-red-50 hover:scale-110 transition-all duration-300"
+          >
             <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-500 transition" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full shadow-sm">
-              2
-            </span>
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full shadow-sm">
+                {wishlistCount}
+              </span>
+            )}
           </button>
 
-          {/* 🛒 Cart — Opens Animated Drawer */}
+          {/* 🛒 Cart */}
           <button
             className="relative group p-2 rounded-full bg-gray-100 shadow-md hover:bg-yellow-50 hover:scale-110 transition-all duration-300"
             onClick={() => setShowCart(true)}
@@ -97,8 +102,11 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
             )}
           </button>
 
-          {/* Profile */}
-          <button className="group p-2 rounded-full bg-gray-100 shadow-md hover:bg-emerald-50 hover:scale-110 transition-all duration-300">
+          {/* 👤 Profile */}
+          <button
+            onClick={() => navigate("/profile")}
+            className="group p-2 rounded-full bg-gray-100 shadow-md hover:bg-emerald-50 hover:scale-110 transition-all duration-300"
+          >
             <User className="w-5 h-5 text-gray-700 group-hover:text-emerald-500 transition" />
           </button>
         </div>
@@ -120,11 +128,10 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
         </div>
       )}
 
-      {/* 🧾 Cart Modal with Slide Animation */}
+      {/* 🧾 Cart Drawer (unchanged) */}
       <AnimatePresence>
         {showCart && (
           <>
-            {/* Background Overlay */}
             <motion.div
               className="fixed inset-0 bg-black/40 z-40"
               initial={{ opacity: 0 }}
@@ -133,87 +140,153 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
               onClick={() => setShowCart(false)}
             />
 
-            {/* Sliding Drawer */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 80, damping: 20 }}
-              className="fixed right-0 top-0 h-full w-80 sm:w-96 bg-white shadow-2xl z-50 flex flex-col"
+              className="fixed right-0 top-0 h-full w-[95%] sm:w-[700px] md:w-[850px] bg-white shadow-2xl z-50 flex flex-col rounded-l-2xl"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b">
-                <h2 className="text-lg font-semibold text-gray-800">Your Cart</h2>
+              <div className="flex items-center justify-center relative px-6 py-4 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+                <h2 className="text-xl font-semibold text-white text-center">
+                  Shopping Cart
+                </h2>
                 <button
                   onClick={() => setShowCart(false)}
-                  className="text-gray-600 hover:text-red-500 transition"
+                  className="absolute right-6 text-white hover:text-gray-200 transition"
                 >
-                  <X size={20} />
+                  <X size={22} />
                 </button>
               </div>
 
-              {/* Items */}
-              <div className="flex-1 overflow-y-auto p-4">
+              {/* Cart Content */}
+              <div className="flex-1 overflow-y-auto p-6">
                 {cart.length === 0 ? (
-                  <p className="text-center text-gray-500 mt-10">
-                    Your cart is empty 🛒
-                  </p>
-                ) : (
-                  cart.map((item: any) => (
+                  <div className="flex flex-col items-center justify-center h-full py-20 text-gray-600">
                     <motion.div
-                      key={item.id}
-                      layout
-                      className="flex items-center justify-between mb-4 border-b pb-3"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
                     >
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-12 h-12 rounded-md object-cover"
-                      />
-                      <div className="flex-1 ml-3">
-                        <p className="text-sm font-medium text-gray-800">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {item.quantity} × ${item.price.toFixed(2)}
-                        </p>
+                      <ShoppingCart size={80} className="text-gray-400 mb-4" />
+                    </motion.div>
+                    <h3 className="text-lg font-semibold">Your Cart is Empty</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      No Products exist here!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {/* Left: Product Table */}
+                    <div className="md:col-span-2 overflow-x-auto rounded-xl shadow-sm">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 text-white text-left">
+                            <th className="p-3 font-semibold">Product</th>
+                            <th className="p-3 font-semibold">Price</th>
+                            <th className="p-3 font-semibold text-center">
+                              Quantity
+                            </th>
+                            <th className="p-3 font-semibold text-right">
+                              Sub Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cart.map((item) => (
+                            <tr
+                              key={item.id}
+                              className="hover:bg-gray-100 transition"
+                            >
+                              <td className="flex items-center gap-3 p-3">
+                                <button
+                                  onClick={() =>
+                                    dispatch(removeFromCart(item.id))
+                                  }
+                                  className="text-gray-400 hover:text-red-500"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-12 h-12 object-cover rounded-md"
+                                />
+                                <div>
+                                  <p className="font-medium text-gray-800">
+                                    {item.name}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="p-3">${item.price.toFixed(2)}</td>
+                              <td className="p-3 text-center">
+                                <div className="flex justify-center items-center gap-2 bg-gray-100 rounded-full px-3 py-1 w-fit mx-auto">
+                                  <button
+                                    className="text-gray-600 hover:text-red-500 transition"
+                                    onClick={() =>
+                                      dispatch(decreaseQuantity(item.id))
+                                    }
+                                  >
+                                    <FaMinus size={12} />
+                                  </button>
+                                  <span className="w-6 text-center font-semibold">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    className="text-gray-600 hover:text-green-500 transition"
+                                    onClick={() =>
+                                      dispatch(increaseQuantity(item.id))
+                                    }
+                                  >
+                                    <FaPlus size={12} />
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="p-3 text-right font-semibold text-gray-700">
+                                ${(item.price * item.quantity).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Right: Order Summary */}
+                    <div className="rounded-xl p-5 shadow-sm h-fit">
+                      <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                        Order summary
+                      </h3>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Items</span>
+                        <span>{cartCount}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Sub Total</span>
+                        <span>${totalPrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Shipping</span>
+                        <span>$0.00</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Taxes</span>
+                        <span>$0.00</span>
+                      </div>
+                      <hr className="my-3" />
+                      <div className="flex justify-between text-base font-bold mb-4">
+                        <span>Total</span>
+                        <span>${totalPrice.toFixed(2)}</span>
                       </div>
                       <button
-                        onClick={() => dispatch(removeFromCart(item.id))}
-                        className="text-red-500 hover:text-red-600"
+                        onClick={() => alert("Proceeding to checkout")}
+                        className="w-full bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 text-white py-2 rounded-lg font-medium hover:opacity-90 transition"
                       >
-                        <Trash2 size={16} />
+                        Proceed to Checkout
                       </button>
-                    </motion.div>
-                  ))
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {/* Footer */}
-              {cart.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="border-t p-4"
-                >
-                  <div className="flex justify-between text-sm font-semibold text-gray-800 mb-3">
-                    <span>Total:</span>
-                    <span>${totalPrice.toFixed(2)}</span>
-                  </div>
-                  <button
-                    onClick={() => dispatch(clearCart())}
-                    className="w-full bg-gray-100 text-gray-700 py-2 rounded-md mb-2 hover:bg-gray-200 transition"
-                  >
-                    Clear Cart
-                  </button>
-                  <button
-                    onClick={() => alert('Proceed to checkout')}
-                    className="w-full bg-linear-to-r from-green-600 to-emerald-500 text-white py-2 rounded-md hover:from-green-700 hover:to-emerald-600 transition"
-                  >
-                    Checkout
-                  </button>
-                </motion.div>
-              )}
             </motion.div>
           </>
         )}

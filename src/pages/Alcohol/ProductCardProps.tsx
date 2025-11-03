@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../../Redux/cartSlice";
+import { addToWishlist, removeFromWishlist } from "../../Redux/wishlistSlice";
+import type { RootState } from "../../Redux/store";
 import toast from "react-hot-toast";
 
 interface ProductCardProps {
@@ -25,26 +27,32 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
   rating = 4,
   onViewDetails,
 }) => {
-  const [liked, setLiked] = useState(false);
   const [quantity, setQuantity] = useState(0);
   const dispatch = useDispatch();
 
+  // 🧠 get wishlist state from Redux
+  const wishlist = useSelector((state: RootState) => state.wishlist.items);
+  const isWishlisted = wishlist.some((item) => item.id === id);
+
+  // ❤️ toggle wishlist
+  const toggleWishlist = () => {
+    if (isWishlisted) {
+      dispatch(removeFromWishlist(id));
+      toast("Removed from wishlist 💔");
+    } else {
+      dispatch(addToWishlist({ id, name, price, image, category }));
+      toast.success("Added to wishlist ❤️");
+    }
+  };
+
+  // 🛒 add to cart logic
   const handleAddToCart = () => {
     if (quantity < 1) {
       toast.error("Please select at least 1 item");
       return;
     }
 
-    dispatch(
-      addToCart({
-        id,
-        name,
-        image,
-        price,
-        quantity,
-      })
-    );
-
+    dispatch(addToCart({ id, name, image, price, quantity }));
     toast.success(`${name} added to your cart 🛒`);
   };
 
@@ -58,20 +66,27 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
         </div>
       )}
 
+      {/* ❤️ Wishlist Button */}
       <button
-        onClick={() => setLiked(!liked)}
+        onClick={toggleWishlist}
         className={`absolute top-3 right-3 z-10 transition-all duration-300 ${
-          liked ? "text-red-500 scale-110" : "text-gray-400 hover:text-red-400"
+          isWishlisted
+            ? "text-red-500 scale-110"
+            : "text-gray-400 hover:text-red-400"
         }`}
       >
-        <Heart size={18} className={liked ? "fill-red-500 text-red-500" : ""} />
+        <Heart
+          size={18}
+          className={isWishlisted ? "fill-red-500 text-red-500" : ""}
+        />
       </button>
 
-      <div className="relative w-full h-44 bg-gray-100 flex items-center justify-center overflow-hidden">
+      {/* Product Image */}
+      <div className="relative w-full h-44 overflow-hidden">
         <img
           src={image}
           alt={name}
-          className="object-fit w-full h-full transition-transform duration-500 group-hover:scale-105"
+          className="absolute inset-0 w-full h-full object-fill transition-transform duration-500 group-hover:scale-105"
         />
       </div>
 
@@ -98,40 +113,58 @@ const GlassProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between bg-gray-50 rounded-full px-2.5 py-1.5">
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setQuantity(Math.max(0, quantity - 1))}
-                className="bg-white border border-gray-200 p-1 rounded-full hover:bg-gray-100 transition-all"
-              >
-                <Minus size={10} className="text-blue-700" />
-              </button>
-              <span className="text-xs font-medium w-4 text-center text-gray-800">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="bg-white border border-gray-200 p-1 rounded-full hover:bg-gray-100 transition-all"
-              >
-                <Plus size={10} className="text-blue-700" />
-              </button>
-            </div>
+  <div
+    className="
+      flex flex-col sm:flex-row items-center justify-between 
+      bg-gray-50 rounded-full px-3 py-2 
+      gap-2 sm:gap-0 
+      w-full
+    "
+  >
+    {/* Quantity Controls */}
+    <div className="flex items-center gap-2 bg-white rounded-full px-2 py-1 shadow-sm">
+      <button
+        onClick={() => setQuantity(Math.max(0, quantity - 1))}
+        className="bg-gray-100 border border-gray-200 p-1 rounded-full hover:bg-gray-200 transition-all"
+      >
+        <Minus size={12} className="text-green-700" />
+      </button>
+      <span className="text-sm font-medium w-4 text-center text-gray-800">
+        {quantity}
+      </span>
+      <button
+        onClick={() => setQuantity(quantity + 1)}
+        className="bg-gray-100 border border-gray-200 p-1 rounded-full hover:bg-gray-200 transition-all"
+      >
+        <Plus size={12} className="text-green-700" />
+      </button>
+    </div>
 
-            <button
-              onClick={handleAddToCart}
-              className="bg-linear-to-r from-blue-600 to-indigo-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-md hover:from-blue-700 hover:to-indigo-600 transition-all duration-300 flex items-center gap-1"
-            >
-              <ShoppingCart size={12} /> Add
-            </button>
-          </div>
+    {/* Add to Cart Button */}
+    <button
+      onClick={handleAddToCart}
+      className="
+        bg-gradient-to-r from-green-600 to-emerald-500 
+        text-white text-[12px] font-semibold 
+        px-4 py-1.5 rounded-full shadow-md 
+        hover:from-green-700 hover:to-emerald-600 
+        transition-all duration-300 
+        flex items-center gap-1 justify-center 
+        w-full sm:w-auto
+      "
+    >
+      <ShoppingCart size={14} /> Add
+    </button>
+  </div>
 
-          <button
-            onClick={onViewDetails}
-            className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline transition-all"
-          >
-            Details
-          </button>
-        </div>
+  <button
+    onClick={onViewDetails}
+    className="text-xs font-semibold text-green-700 hover:text-green-900 underline transition-all"
+  >
+    Details
+  </button>
+</div>
+
       </div>
     </div>
   );
