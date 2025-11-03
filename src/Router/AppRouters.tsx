@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "../pages/HomeScreen/auth/Login";
-import Register from "../pages/HomeScreen/auth/Register";
+import Login from "../pages/auth/Login";
+import Register from "../pages/auth/Register";
 import Layout from "../pages/Layout";
 import Home from "../pages/HomeScreen/Home";
 import Grocery from "../pages/Grocery/Grocery";

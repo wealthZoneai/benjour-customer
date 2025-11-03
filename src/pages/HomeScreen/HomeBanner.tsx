@@ -28,34 +28,42 @@ const HomeBanner: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // ✅ Simulate API fetch
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await new Promise<BannerData[]>((resolve) =>
-          setTimeout(
-            () =>
-              resolve([
-                {
-                  videoUrl: "", // Empty → fallback videos used
-                  imageUrl:
-                    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1920&q=80",
-                  title: "Explore Premium Spirits Near You",
-                  subtitle:
-                    "Your favorite alcohol brands, now just a tap away. Fast delivery. Best prices.",
-                },
-              ]),
-            800
-          )
-        );
-        setBannerData(response.length ? response : [fallbackBanner]);
-      } catch (err) {
-        // console.error("Error fetching banner data:", err);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      // Simulate an API call
+      const response: BannerData[] = await new Promise((resolve) =>
+        setTimeout(
+          () =>
+            resolve([
+              {
+                videoUrl: "", // Empty → fallback videos will be used
+                imageUrl:
+                  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1920&q=80",
+                title: "Explore Premium Spirits Near You",
+                subtitle:
+                  "Your favorite alcohol brands, now just a tap away. Fast delivery. Best prices.",
+              },
+            ]),
+          800 // ⏱ fake network delay
+        )
+      );
+
+      // ✅ If API returns empty array, use fallbackBanner
+      if (response && response.length > 0) {
+        setBannerData(response);
+      } else {
         setBannerData([fallbackBanner]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching banner data:", error);
+      setBannerData([fallbackBanner]);
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []);
+
 
   // ✅ Handle video events
   useEffect(() => {
@@ -177,3 +185,4 @@ const HomeBanner: React.FC = () => {
 };
 
 export default HomeBanner;
+

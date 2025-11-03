@@ -2,6 +2,12 @@ import React from "react";
 import { useOutletContext } from "react-router-dom";
 import HomeBanner from "./HomeBanner";
 import CategoriesScreen from "./CategoriesScreen";
+import BrandSection from "./Popular Brand Section";
+import ComboScreen from "./Combo";
+import TopRating from "./TopRating";
+import GroceriesHome from "./GroceriesHome";
+import CustomerReviews from "./CustomerReviews";
+import Overview from "./Overview";
 
 interface LayoutContext {
   searchQuery: string;
@@ -20,7 +26,13 @@ const Home: React.FC = () => {
       {searchQuery.trim() === "" ? (
         <>
           <HomeBanner />
-          <CategoriesScreen/>
+          <CategoriesScreen />
+          <BrandSection />
+          <ComboScreen />
+          <TopRating />
+          <GroceriesHome />
+          <CustomerReviews />
+          <Overview/>
         </>
       ) : (
         <>
