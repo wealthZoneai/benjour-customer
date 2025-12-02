@@ -1,86 +1,112 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import GroceriesBanner from "./GroceriesBanner";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../Redux/store";
+import CreateCategoryModal from "../../components/CreateCategoryModal";
+import DeleteModal from "../../components/DeleteModal";
+import { getGroceryCategories, createGroceryCategory, updateGroceryCategory, deleteGroceryCategory } from "../../services/apiHelpers";
+import { toast } from "react-hot-toast";
 
-const categories = [
-  {
-    name: "fruits",
-    displayName: "Fruits",
-    image:
-      "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=1470",
-    description: "Fresh and organic fruits picked daily for you.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "vegetables",
-    displayName: "Vegetables",
-    image:
-      "https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&q=80&w=1632",
-    description: "Green, leafy, and full of vitamins and nutrients.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "dairy",
-    displayName: "Dairy & Eggs",
-    image:
-      "https://images.unsplash.com/photo-1572086301796-cb8920f1b2af?auto=format&fit=crop&q=80&w=1470",
-    description: "Pure milk, cheese, butter, and farm-fresh eggs.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "snacks",
-    displayName: "Snacks",
-    image:
-      "https://plus.unsplash.com/premium_photo-1679591002405-13fec066bd53?auto=format&fit=crop&q=80&w=1632",
-    description: "Crunchy, salty, sweet — perfect for every craving!",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "beverages",
-    displayName: "Beverages",
-    image:
-      "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&q=80&w=1557",
-    description: "Refreshing juices, smoothies, and energizing drinks.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "bakery",
-    displayName: "Bakery",
-    image:
-      "https://plus.unsplash.com/premium_photo-1681826507324-0b3c43928753?auto=format&fit=crop&q=80&w=1469",
-    description: "Soft breads, delicious pastries, and gourmet cakes.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "spices",
-    displayName: "Spices & Herbs",
-    image:
-      "https://images.unsplash.com/photo-1716816211590-c15a328a5ff0?auto=format&fit=crop&q=80&w=1423",
-    description: "Aromatic spices and herbs to elevate every dish.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-  {
-    name: "grains",
-    displayName: "Grains & Pulses",
-    image:
-      "https://plus.unsplash.com/premium_photo-1726750862897-4b75116bca34?auto=format&fit=crop&q=80&w=1467",
-    description: "Wholesome grains and protein-rich pulses.",
-    gradient: "text-white",
-    iconColor: "text-green-600",
-  },
-];
+
 
 const Grocery: React.FC = () => {
   const navigate = useNavigate();
+  const { role } = useSelector((state: RootState) => state.user);
+  const [categoriesList, setCategoriesList] = useState<any>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id?: any }>({ isOpen: false });
+  const [loading, setLoading] = useState(false);
+  const [fetchingCategories, setFetchingCategories] = useState(true);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setFetchingCategories(true);
+      const response = await getGroceryCategories();
+      if (response.data && Array.isArray(response.data)) {
+        setCategoriesList(response?.data);
+      }
+    } catch (err: any) {
+      console.error("Error fetching categories:", err);
+      // Use fallback categories on error
+      setCategoriesList([]) ;
+      toast.error("Using default categories. Please check your connection.");
+    } finally {
+      setFetchingCategories(false);
+    }
+  };
+
+  const handleCreateCategory = async (categoryData: any) => {
+    try {
+      setLoading(true);
+      if (editingCategory) {
+        // Update existing category
+        const response = await updateGroceryCategory(editingCategory.id, categoryData);
+        if (response.data) {
+          setCategoriesList(categoriesList.map((cat:any) =>
+            cat.id === editingCategory.id ? response.data : cat
+          ));
+          toast.success("Category updated successfully!");
+        }
+        setEditingCategory(null);
+      } else {
+        // Create new category
+        const response = await createGroceryCategory(categoryData);
+        if (response.data) {
+          setCategoriesList([...categoriesList, response.data]);
+          toast.success("Category created successfully!");
+        }
+      }
+      setIsCreateModalOpen(false);
+    } catch (err: any) {
+      console.error("Error saving category:", err);
+      toast.error(err.response?.data?.message || "Failed to save category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditClick = (category: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCategory(category);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleDeleteClick = (category: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteModal({ isOpen: true, id: category.id })
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.id) return;
+
+    try {
+      setLoading(true);
+      await deleteGroceryCategory(deleteModal.id);
+      setCategoriesList((prev:any) => prev.filter((i: any) => i.id !== deleteModal.id));
+      toast.success("Category deleted successfully!");
+      setDeleteModal({ isOpen: false, id: null });
+    } catch (err: any) {
+      console.error("Error deleting category:", err);
+      toast.error(err.response?.data?.message || "Failed to delete category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleCloseModal = () => {
+    setIsCreateModalOpen(false);
+    setEditingCategory(null);
+  };
 
   return (
     <div className="min-h-screen mt-10 bg-linear-to-br  from-gray-50 via-white to-gray-50">
@@ -98,45 +124,128 @@ const Grocery: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {categories.map((category, index) => (
-              <motion.div
-                key={category.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * (index + 1) }}
-                whileHover={{ scale: 1.03 }}
-                className={`group relative overflow-hidden rounded-2xl bg-linear-to-br ${category.gradient} shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer`}
-                onClick={() => navigate(`/grocery/${category.name}`)}
+          {/* Admin Create Button */}
+          {role === "ADMIN" && (
+            <div className="flex justify-end mb-8">
+              <button
+                onClick={() => {
+                  setEditingCategory(null);
+                  setIsCreateModalOpen(true);
+                }}
+                className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-green-700 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
               >
-                <div className="relative h-44 w-full overflow-hidden rounded-t-2xl">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent"></div>
-                </div>
+                <Plus size={20} />
+                Create Category
+              </button>
+            </div>
+          )}
 
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2 capitalize">
-                    {category.displayName}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-4">
-                    {category.description}
-                  </p>
-                  <div
-                    className={`flex items-center text-sm font-medium ${category.iconColor}`}
-                  >
-                    Explore <ChevronRight className="w-4 h-4 ml-1" />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+          {/* Loading State */}
+         {fetchingCategories ? (
+  <div className="flex justify-center items-center py-20">
+    <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
+  </div>
+) : (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+    {categoriesList.map((category: any, index: number) => (
+      <motion.div
+        key={category.name}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 * (index + 1) }}
+        whileHover={{ scale: 1.03 }}
+        className={`group relative overflow-hidden rounded-2xl bg-linear-to-br ${category.gradient} shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer`}
+        onClick={() => navigate(`/grocery/${category.name}`)}
+      >
+        {/* IMAGE */}
+        <div className="relative h-44 w-full overflow-hidden rounded-t-2xl">
+          <img
+            src={category.image}
+            alt={category.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          />
+
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent"></div>
+
+          {/* ADMIN BUTTONS */}
+          {role === "ADMIN" && (
+            <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+
+              {/* EDIT BUTTON */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // 🔥 prevent navigation
+                  handleEditClick(category, e);
+                }}
+                className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-sm transition-all transform hover:scale-110"
+                title="Edit Category"
+              >
+                <Pencil size={16} />
+              </button>
+
+              {/* DELETE BUTTON */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // 🔥 prevents navigate
+                  handleDeleteClick(category , e);
+                }}
+                className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm transition-all transform hover:scale-110"
+                title="Delete Category"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* CONTENT */}
+        <div className="p-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2 capitalize">
+            {category.displayName}
+          </h3>
+
+          <p className="text-gray-600 text-sm mb-4">
+            {category.description}
+          </p>
+
+          <div
+            className={`flex items-center text-sm font-medium ${category.iconColor}`}
+          >
+            Explore <ChevronRight className="w-4 h-4 ml-1" />
           </div>
+
+          {/* PRODUCT COUNT */}
+          <p className="mt-4 text-gray-700 font-medium">
+            {category?.products?.length
+              ? `${category.products.length} products`
+              : "No products available"}
+          </p>
+        </div>
+      </motion.div>
+    ))}
+  </div>
+)}
+
         </div>
       </div>
-    </div>
+
+
+      <CreateCategoryModal
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleCreateCategory}
+        initialData={editingCategory}
+        isLoading={loading}
+      />
+      <DeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Delete Item"
+        message="Are you sure you want to permanently delete this item?"
+      />
+
+    </div >
   );
 };
 

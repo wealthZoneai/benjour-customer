@@ -1,6 +1,6 @@
 import React from "react";
 import { Wine, Flame, Grape } from "lucide-react";
-import wineglass from "../../assets/Glass.jpg"; // ✅ update this path if needed
+// import wineglass from "../../assets/Glass.jpg"; // ✅ update this path if needed
 
 const BrandSection: React.FC = () => {
   return (
@@ -16,7 +16,7 @@ const BrandSection: React.FC = () => {
         <div className="md:w-1/2 w-full flex justify-center items-center overflow-hidden  ">
           <div className="relative w-full md:w-[100%] h-[320px] md:h-[400px]  ">
             <img
-              src={wineglass}
+              // src={wineglass}
               alt="Wine glass"
               className="w-full h-full object-cover transform scale-100 transition-transform duration-500 hover:scale-110"
             />

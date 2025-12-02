@@ -1,85 +1,75 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import GroceryProductCard from "./ProductCard";
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, Plus, X, Pencil, Trash2 } from "lucide-react";
 import PageHeader from "./PageHeader";
+import GroceryProductCard from "./ProductCard";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../Redux/store";
+import CreateItemModal from "../../components/CreateItemModal";
 
+// Updated product interface to match CreateItemModal fields
 export interface GroceryProduct {
   id: number;
+  subCategoryId: number;
   name: string;
-  image: string;
   price: number;
-  discount?: number;
-  rating?: number;
+  discount: number;
+  rating: number;
+  description: string;
+  isFavorite: boolean;
+  image: string; // base64 preview OR url
   category: string;
-  description?: string;
 }
 
-// 🥕 Sample grocery products
-export const groceryProducts: GroceryProduct[] = [
+// Sample item list with new fields
+const defaultItems: GroceryProduct[] = [
   {
     id: 1,
+    subCategoryId: 3,
     name: "Fresh Red Apples",
-    image:
-      "https://cdn.shopify.com/s/files/1/0580/7633/7911/products/apple_1024x1024.jpg?v=1638556800",
-    price: 2.5,
+    price: 250,
     discount: 10,
     rating: 4.8,
-    category: "fruits",
     description:
-      "Crisp and juicy red apples freshly picked from organic farms. Perfect for snacking or juicing!",
+      "Crisp and juicy red apples freshly picked from organic farms.",
+    isFavorite: false,
+    image:
+      "https://cdn.shopify.com/s/files/1/0580/7633/7911/products/apple_1024x1024.jpg?v=1638556800",
+    category: "fruits",
   },
   {
     id: 2,
+    subCategoryId: 3,
     name: "Organic Bananas",
-    image:
-      "https://cdn.shopify.com/s/files/1/0609/1064/3589/products/banana.png?v=1632306804",
-    price: 1.2,
+    price: 120,
     discount: 5,
     rating: 4.7,
+    description:
+      "Naturally sweet organic bananas rich in fiber and potassium.",
+    isFavorite: false,
+    image:
+      "https://cdn.shopify.com/s/files/1/0609/1064/3589/products/banana.png?v=1632306804",
     category: "fruits",
-    description:
-      "Naturally sweet organic bananas rich in fiber and potassium. Great for smoothies or breakfast bowls.",
-  },
-  {
-    id: 3,
-    name: "Broccoli Bunch",
-    image:
-      "https://cdn.shopify.com/s/files/1/0573/4246/1198/products/broccoli.png?v=1646995181",
-    price: 1.8,
-    discount: 8,
-    rating: 4.6,
-    category: "vegetables",
-    description:
-      "Fresh green broccoli packed with nutrients. Perfect for steaming, salads, or healthy meals.",
-  },
-  {
-    id: 4,
-    name: "Whole Milk (1L)",
-    image:
-      "https://cdn.shopify.com/s/files/1/0617/2681/9474/products/milk.png?v=1647005313",
-    price: 3.0,
-    discount: 12,
-    rating: 4.5,
-    category: "dairy",
-    description:
-      "Farm-fresh whole milk rich in calcium and flavor — perfect for your tea, coffee, or cereal.",
   },
 ];
 
 const GroceryItems: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
+  const { role } = useSelector((state: RootState) => state.user);
+
+  const [items, setItems] = useState<GroceryProduct[]>(defaultItems);
   const [selectedProduct, setSelectedProduct] = useState<GroceryProduct | null>(
     null
   );
+  const [editingItem, setEditingItem] = useState<GroceryProduct | null>(null);
+  const [isItemModalOpen, setItemModalOpen] = useState(false);
 
-  const categoryProducts = groceryProducts.filter(
-    (product) => product.category.toLowerCase() === category?.toLowerCase()
+  const categoryProducts = items.filter(
+    (p) => p.category.toLowerCase() === category?.toLowerCase()
   );
 
-  // 🍏 Category info for theme
   const categoryInfo: Record<
     string,
     { emoji: string; tagline: string; color: string }
@@ -99,59 +89,60 @@ const GroceryItems: React.FC = () => {
       tagline: "Pure, creamy, and wholesome",
       color: "from-blue-400 to-indigo-600",
     },
-    snacks: {
-      emoji: "🍿",
-      tagline: "Crunchy delights for any time",
-      color: "from-orange-400 to-red-600",
-    },
-    beverages: {
-      emoji: "🧃",
-      tagline: "Refreshing sips for your day",
-      color: "from-cyan-400 to-blue-600",
-    },
   };
 
   const info =
-    categoryInfo[category?.toLowerCase() || ""] ?? {
+    categoryInfo[category || ""] ?? {
       emoji: "🛒",
       tagline: "Shop the best grocery essentials",
       color: "from-gray-400 to-gray-700",
     };
 
-  // ❌ No items fallback
+  // DELETE Item
+  const handleDeleteItem = (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // When creating OR updating item
+  const handleSubmitItem = (data: any) => {
+    if (editingItem) {
+      // Edit existing item
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === editingItem.id ? { ...item, ...data } : item
+        )
+      );
+      setEditingItem(null);
+    } else {
+      // Create new item
+      const newItem: GroceryProduct = {
+        id: Date.now(),
+        category: category || "unknown",
+        ...data,
+      };
+
+      setItems((prev) => [...prev, newItem]);
+    }
+  };
+
+  // Admin-only: show create/edit/delete
   if (categoryProducts.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen flex flex-col items-center justify-center px-6 bg-linear-to-br from-gray-50 to-gray-100"
+        className="min-h-screen flex flex-col items-center justify-center px-6 bg-gray-100"
       >
-        <motion.div
-          initial={{ scale: 0.8, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          className="text-center max-w-md"
-        >
-          <div className="text-6xl mb-4">{info.emoji}</div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">
-            Oops! Category Not Found
-          </h1>
-          <p className="text-gray-600 mb-8">
-            We couldn’t find any products in this category.
-          </p>
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-green-600 to-emerald-600 text-white font-medium rounded-full hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            Go Back
-          </button>
-        </motion.div>
+        <h1 className="text-4xl font-bold">No Products Found</h1>
       </motion.div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="pt-16">
         <PageHeader
           title={category || "Grocery"}
@@ -160,26 +151,77 @@ const GroceryItems: React.FC = () => {
         />
       </div>
 
-      {/* Product Cards */}
+      {/* ADMIN: Create Item */}
+      {role === "ADMIN" && (
+        <div className="flex justify-end mb-8 px-6">
+          <button
+            onClick={() => {
+              setEditingItem(null);
+              setItemModalOpen(true);
+            }}
+            className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 shadow-lg transition"
+          >
+            <Plus size={20} />
+            Create Item
+          </button>
+        </div>
+      )}
+
+      {/* Product cards */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {categoryProducts.map((product) => (
-            <GroceryProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              category={product.category}
-              price={product.price}
-              image={product.image}
-              discount={product.discount}
-              rating={product.rating}
-              onViewDetails={() => setSelectedProduct(product)}
-            />
+            <div key={product.id} className="relative group">
+
+              {/* Admin Edit/Delete */}
+              {role === "ADMIN" && (
+                <div className="
+                  absolute top-3 right-3 flex gap-2 z-20
+                  opacity-0 group-hover:opacity-100 
+                  transition-opacity duration-300 pointer-events-auto
+                ">
+                  {/* Edit */}
+                  <button
+                    onClick={() => {
+                      setEditingItem(product);
+                      setItemModalOpen(true);
+                    }}
+                    className="p-2 bg-white/90 rounded-full text-blue-600 
+                          hover:bg-blue-50 hover:text-blue-700 shadow-md 
+                          transform hover:scale-110 transition"
+                  >
+                    <Pencil size={16} />
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => handleDeleteItem(product.id)}
+                    className="p-2 bg-white/90 rounded-full text-red-600 
+                            hover:bg-red-50 hover:text-red-700 shadow-md 
+                            transform hover:scale-110 transition"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              )}
+
+              {/* Card */}
+              <GroceryProductCard
+                id={product.id}
+                name={product.name}
+                category={product.category}
+                price={product.price}
+                image={product.image}
+                discount={product.discount}
+                rating={product.rating}
+                onViewDetails={() => setSelectedProduct(product)}
+              />
+            </div>
           ))}
         </div>
       </div>
 
-      {/* 🧺 Product Details Modal */}
+      {/* PRODUCT DETAILS POPUP */}
       <AnimatePresence>
         {selectedProduct && (
           <motion.div
@@ -189,7 +231,7 @@ const GroceryItems: React.FC = () => {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl relative"
+              className="bg-white rounded-2xl p-6 max-w-lg w-full relative shadow-xl"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.8 }}
@@ -201,34 +243,32 @@ const GroceryItems: React.FC = () => {
                 <X size={20} />
               </button>
 
-              <div className="flex flex-col items-center gap-4 sm:gap-6 text-center">
-                <img
-                  src={selectedProduct.image}
-                  alt={selectedProduct.name}
-                  className="w-48 h-48 object-cover rounded-xl shadow-md"
-                />
+              <img
+                src={selectedProduct.image}
+                className="w-48 h-48 object-cover rounded-xl mx-auto mb-4"
+              />
 
-                <div className="w-full">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                    {selectedProduct.name}
-                  </h2>
-                  <p className="text-gray-600 mb-3 max-h-32 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    {selectedProduct.description ||
-                      "No description available."}
-                  </p>
-                  <p className="text-green-700 font-semibold text-lg mb-4">
-                    ${selectedProduct.price.toFixed(2)}
-                  </p>
-
-                  <button className="bg-linear-to-r from-green-600 to-emerald-500 text-white px-6 py-2 rounded-full shadow hover:from-green-700 hover:to-emerald-600 transition-all">
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
+              <h2 className="text-2xl font-bold text-center">
+                {selectedProduct.name}
+              </h2>
+              <p className="text-gray-600 text-center mt-2">
+                {selectedProduct.description}
+              </p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Create / Edit Item Modal */}
+      <CreateItemModal
+        isOpen={isItemModalOpen}
+        onClose={() => {
+          setItemModalOpen(false);
+          setEditingItem(null);
+        }}
+        initialData={editingItem}
+        onSubmit={handleSubmitItem}
+      />
     </div>
   );
 };

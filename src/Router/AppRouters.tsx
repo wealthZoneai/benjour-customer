@@ -10,6 +10,7 @@ import ScrollToTop from "../components/ScrollToTop";
 import GroceryItems from "../pages/Grocery/GroceryItems";
 import Profile from "../pages/Profile";
 import Wishlist from "../pages/Wishlist";
+import OtpScreen from "../pages/auth/OtpScreen";
 
 
 const AppRouters = () => {
@@ -31,6 +32,7 @@ const AppRouters = () => {
       {/* Routes without Header & Footer */}
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/otp" element={<OtpScreen />} />
     </Routes>
     </>
   );

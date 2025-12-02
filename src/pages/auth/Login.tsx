@@ -2,12 +2,15 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast"; // ✅ Import toast
+import { loginUser } from "../../services/apiHelpers";
+import { setUserData } from "../../Redux/userData";
+import { useDispatch } from "react-redux";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isLogin = location.pathname === "/";
-
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -34,31 +37,42 @@ const Login: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isLogin) {
-      if (!formData.email || !formData.password) {
-        toast.error("Please fill all fields");
-        return;
-      }
-      toast.success("Login successful!");
-      navigate("/home");
-    } else {
-      if (
-        !formData.name ||
-        !formData.email ||
-        !formData.password ||
-        !formData.confirmPassword
-      ) {
-        toast.error("Please fill all fields");
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords don't match!");
-        return;
-      }
-      toast.success("Registration successful!");
-      navigate("/");
+    const { email, password } = formData;
+
+    if (!email || !password) {
+      toast.error("Please enter email & password");
+      return;
     }
+
+    loginUser({ email, password })
+      .then((response) => {
+        if (response.data && response.data.token) {
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("role", response.data.role);
+          localStorage.setItem("username", response.data.username);
+
+          dispatch(
+            setUserData({
+              token: response.data.token,
+              userName: response.data.username,
+              role: response.data.role,
+            })
+          );
+
+          toast.success("Login successful!");
+          window.location.replace("/home");
+        } else {
+          toast.error("Login failed. Token not received.");
+        }
+      })
+      .catch((error) => {
+        const msg =
+          error.response?.data?.message || "Login failed. Please try again.";
+        toast.error(msg);
+      });
   };
+
+
 
   const toggleForm = () => {
     if (isFlipping) return;

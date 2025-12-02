@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 
 interface ComboItem {
   id: number;
   image: string;
   title: string;
+  subtitle: string;
+  className: string;
 }
 
 const comboData: ComboItem[] = [
@@ -12,86 +16,88 @@ const comboData: ComboItem[] = [
     image:
       "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHdpbmVzfGVufDB8fDB8fHww&fm=jpg&q=60&w=3000",
     title: "The Taste of Europe",
+    subtitle: "Curated wines from Italy, France & Spain",
+    className: "md:col-span-2 md:row-span-2 h-[500px]",
   },
   {
     id: 2,
     image:
       "https://plus.unsplash.com/premium_photo-1682097091093-dd18b37764a5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8d2luZXxlbnwwfHwwfHx8MA%3D%3D&fm=jpg&q=60&w=3000",
     title: "Mixed Wine Packs",
+    subtitle: "Perfect for tasting parties",
+    className: "md:col-span-1 md:row-span-1 h-[240px]",
   },
   {
     id: 3,
     image:
-      "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHdpbmVzfGVufDB8fDB8fHww&fm=jpg&q=60&w=3000",
+      "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=1000",
     title: "Paris Best Reds",
+    subtitle: "Bold & Elegant",
+    className: "md:col-span-1 md:row-span-1 h-[240px]",
   },
   {
     id: 4,
     image:
-      "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHdpbmVzfGVufDB8fDB8fHww&fm=jpg&q=60&w=3000",
-    title: "Classic Wine Taste",
+      "https://images.unsplash.com/photo-1559563362-c667ba5f5480?auto=format&fit=crop&q=80&w=1000",
+    title: "Classic Collection",
+    subtitle: "Timeless favorites",
+    className: "md:col-span-2 md:row-span-1 h-[240px]",
   },
 ];
 
 const Combo: React.FC = () => {
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
-
   return (
-    <section className="max-w-8xl mx-auto   px-10 py-8">
-      <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2 mx-13 py-2 ">
-        Combo Collections
-      </h2>
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-10">
+        <div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            Combo Collections
+          </h2>
+          <p className="text-gray-500 text-lg">
+            Handpicked sets for every occasion.
+          </p>
+        </div>
+        <button className="hidden md:flex items-center gap-2 text-amber-600 font-semibold hover:gap-3 transition-all">
+          View All Collections <ArrowRight size={20} />
+        </button>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-        {comboData.map((item) => (
-          <div
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {comboData.map((item, index) => (
+          <motion.div
             key={item.id}
-            className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group"
-            onMouseEnter={() => setHoveredId(item.id)}
-            onMouseLeave={() => setHoveredId(null)}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.1 }}
+            className={`relative rounded-3xl overflow-hidden group cursor-pointer ${item.className}`}
           >
-            {/* Image with Zoom on Hover (responsive height) */}
             <img
               src={item.image}
               alt={item.title}
-              className={`w-full h-[280px] sm:h-[360px] md:h-[420px] lg:h-[490px] object-cover transform transition-transform duration-700 ${
-                hoveredId === item.id ? "scale-110" : "scale-100"
-              }`}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
+            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
 
-            {/* Dark Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-
-            {/* Title + Hover Effects */}
-            <div className="absolute bottom-8 left-0 w-full text-center">
-              <h3
-                className={`text-white text-2xl font-bold mb-2 transition-all duration-500 ${
-                  hoveredId === item.id
-                    ? "translate-y-[-12px] opacity-90"
-                    : "translate-y-0 opacity-100"
-                }`}
-              >
-                {item.title}
-              </h3>
-
-              <h4
-                className={`text-white text-lg font-semibold transition-all duration-500 ${
-                  hoveredId === item.id
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-[10px]"
-                }`}
-              >
-                Shop Collection
-              </h4>
-
-              <div
-                className={`mx-auto mt-2 h-[2px] bg-white transition-all duration-500 ${
-                  hoveredId === item.id ? "w-24 opacity-100" : "w-0 opacity-0"
-                }`}
-              ></div>
+            <div className="absolute bottom-0 left-0 p-6 w-full">
+              <div className="transform transition-transform duration-300 group-hover:-translate-y-2">
+                <h3 className="text-white text-2xl font-bold mb-1">{item.title}</h3>
+                <p className="text-gray-300 text-sm mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                  {item.subtitle}
+                </p>
+                <div className="flex items-center gap-2 text-amber-400 font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200">
+                  Shop Now <ArrowRight size={16} />
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         ))}
+      </div>
+
+      <div className="mt-8 text-center md:hidden">
+        <button className="inline-flex items-center gap-2 text-amber-600 font-semibold">
+          View All Collections <ArrowRight size={20} />
+        </button>
       </div>
     </section>
   );
