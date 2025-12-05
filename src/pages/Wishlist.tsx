@@ -1,20 +1,86 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../Redux/store";
 import { addToCart } from "../Redux/cartSlice";
-import { addToWishlist, removeFromWishlist } from "../Redux/wishlistSlice";
+import { addToWishlist, removeFromWishlist, clearWishlist } from "../Redux/wishlistSlice";
 import { ShoppingCart, Plus, Minus, Heart } from "lucide-react";
 import toast from "react-hot-toast";
+import { getFavoriteItems, setFavoriteItem, AddToCart } from "../services/apiHelpers";
 
 const Wishlist: React.FC = () => {
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
+  const userId = useSelector((state: RootState) => state.user.userId);
   const dispatch = useDispatch();
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [loading, setLoading] = useState(true);
 
-  const handleAddToCart = (item: any) => {
+  // Fetch favorite items from API on component mount
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await getFavoriteItems();
+
+        if (response?.data) {
+          // Clear existing wishlist and populate with API data
+          dispatch(clearWishlist());
+
+          // Add each favorite item to Redux store
+          response.data.forEach((item: any) => {
+            dispatch(addToWishlist({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              image: item.imageUrl,
+              category: item.category || "General",
+              rating: item.rating || 4,
+            }));
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching favorites:", error);
+        toast.error("Failed to load wishlist items");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFavorites();
+  }, [userId, dispatch]);
+
+  const handleAddToCart = async (item: any) => {
+    if (!userId) {
+      toast.error("Please login before adding items to cart");
+      return;
+    }
+
     const quantity = quantities[item.id] || 1;
-    dispatch(addToCart({ ...item, quantity }));
-    toast.success(`${item.name} added to cart 🛒`);
+
+    if (quantity < 1) {
+      toast.error("Please select at least 1 item");
+      return;
+    }
+
+    try {
+      // Call backend API
+      const response = await AddToCart(userId, item.id, quantity);
+
+      if (!response || !response.data) {
+        toast.error("Failed to add item to cart");
+        return;
+      }
+
+      // Update Redux state
+      dispatch(addToCart({ ...item, quantity }));
+      toast.success(`${item.name} added to cart 🛒`);
+    } catch (error) {
+      console.error("Cart API Error:", error);
+      toast.error("Something went wrong while adding item");
+    }
   };
 
   const handleQuantityChange = (id: number, delta: number) => {
@@ -24,16 +90,67 @@ const Wishlist: React.FC = () => {
     }));
   };
 
-  const toggleWishlist = (item: any) => {
+  const toggleWishlist = async (item: any) => {
+    if (!userId) {
+      toast.error("Please login to manage your wishlist");
+      return;
+    }
+
     const isWishlisted = wishlist.some((w) => w.id === item.id);
+    const newFavoriteStatus = !isWishlisted;
+
+    // Optimistic UI update
     if (isWishlisted) {
       dispatch(removeFromWishlist(item.id));
-      toast("Removed from wishlist 💔");
     } else {
       dispatch(addToWishlist(item));
-      toast.success("Added to wishlist ❤️");
+    }
+
+    try {
+      // Call API to persist favorite status
+      const response = await setFavoriteItem(item.id, newFavoriteStatus);
+
+      if (!response || !response.data) {
+        // Revert optimistic update on failure
+        if (isWishlisted) {
+          dispatch(addToWishlist(item));
+        } else {
+          dispatch(removeFromWishlist(item.id));
+        }
+        toast.error("Failed to update wishlist");
+        return;
+      }
+
+      // Show success message
+      if (newFavoriteStatus) {
+        toast.success("Added to wishlist ❤️");
+      } else {
+        toast("Removed from wishlist 💔");
+      }
+    } catch (error) {
+      console.error("Wishlist API Error:", error);
+
+      // Revert optimistic update on error
+      if (isWishlisted) {
+        dispatch(addToWishlist(item));
+      } else {
+        dispatch(removeFromWishlist(item.id));
+      }
+
+      toast.error("Something went wrong while updating wishlist");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 pt-24">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your wishlist...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (wishlist.length === 0) {
     return (
@@ -76,11 +193,10 @@ const Wishlist: React.FC = () => {
                 {/* ❤️ Wishlist Button */}
                 <button
                   onClick={() => toggleWishlist(item)}
-                  className={`absolute top-3 right-3 z-10 transition-all duration-300 ${
-                    isWishlisted
-                      ? "text-red-500 scale-110"
-                      : "text-gray-400 hover:text-red-400"
-                  }`}
+                  className={`absolute top-3 right-3 z-10 transition-all duration-300 ${isWishlisted
+                    ? "text-red-500 scale-110"
+                    : "text-gray-400 hover:text-red-400"
+                    }`}
                 >
                   <Heart
                     size={18}

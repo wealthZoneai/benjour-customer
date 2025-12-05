@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { FaHeart, FaShoppingCart } from 'react-icons/fa';
 
 interface Product {
-  id: number;
+  id: any;
+  
   name: string;
   price: number;
   imageUrl: string;

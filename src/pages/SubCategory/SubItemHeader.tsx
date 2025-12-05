@@ -1,5 +1,4 @@
 import React from "react";
-import Loginbanner from "../../assets/alcohol-banner.png";
 
 interface PageHeaderProps {
   title: string;
@@ -7,17 +6,17 @@ interface PageHeaderProps {
   emoji?: string;   // ✅ optional emoji
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ title, tagline, emoji }) => {
+const SubItemHeader: React.FC<PageHeaderProps> = ({ title, tagline, emoji }) => {
   return (
-    <header className="relative mx-1 md:mx-2 h-[205px] md:h-[255px] overflow-hidden mb-5 rounded-3xl shadow-lg ">
+    <header className="relative mx-1 md:mx-2 h-[205px] md:h-[255px] overflow-hidden mb-5 rounded-3xl shadow-lg">
       {/* ✅ Background Image */}
       <img
-        src={Loginbanner}
+        src="https://images.unsplash.com/photo-1506617564039-2f3b650b7010?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80"
         alt={`${title} Banner`}
         className="absolute inset-0 w-full h-full object-cover object-right rounded-3xl"
       />
 
-      {/* ✅ Gradient Overlay (fixed class name) */}
+      {/* ✅ Gradient Overlay */}
       <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent rounded-3xl" />
 
       {/* ✅ Title Section */}
@@ -49,4 +48,4 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, tagline, emoji }) => {
   );
 };
 
-export default PageHeader;
+export default SubItemHeader;

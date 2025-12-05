@@ -4,29 +4,72 @@ const endpoints = {
     sendEmailOtp: 'api/auth/send-email-otp',
     verifyEmailOtp: "api/Alcohols/auth/verify/user",
 
-    // Grocery Categories
-    getGroceryCategories: 'api/groceries/categories',
-    createGroceryCategory: 'api/groceries/categories',
-    updateGroceryCategory: 'api/groceries/categories',
-    deleteGroceryCategory: 'api/groceries/categories',
+    // Dynamic Categories (Main categories like Groceries, Alcohol, Drinks)
+    getMainCategories: 'api/categories/getAllCategories',
+    createMainCategory: 'api/categories/createCategory',
+    updateMainCategory: 'api/categories/updateCategory?id=',
+    deleteMainCategory: 'api/categories/deleteCategory?id=',
+    getCategoryById: 'api/categories/getSubCategoryById?categoryId=',
 
-    // Alcohol Categories
-    getAlcoholCategories: 'api/alcohols/categories',
-    createAlcoholCategory: 'api/alcohols/categories',
-    updateAlcoholCategory: 'api/alcohols/categories',
-    deleteAlcoholCategory: 'api/alcohols/categories',
+    // Subcategories (e.g., Fruits, Vegetables under Groceries)
+    getCategorySubcategories: 'api/categories/getSubCategoryById?categoryId=',
+    createSubcategory: 'api/subcategories/createSubCategory?categoryId=',
+    updateSubcategory: 'api/subcategories/updateSubcategory?subcategoryId=',
+    deleteSubcategory: 'api/subcategories/deleteCategory?id=',
 
-    // Grocery Items
-    getGroceryItems: 'api/groceries/items',
-    createGroceryItem: 'api/groceries/items',
-    updateGroceryItem: 'api/groceries/items',
-    deleteGroceryItem: 'api/groceries/items',
+    // Items under subcategories
+    getSubcategoryItems: 'api/items/getItemsBySubCategoryId?subCategoryId=',
+    createItem: 'api/items/createItem?subCategoryId=',
+    updateItem: 'api/items/updateItem?ItemId=',
+    deleteItem: 'api/items/deleteItem?id=',
 
-    // Alcohol Items
-    getAlcoholItems: 'api/alcohols/items',
-    createAlcoholItem: 'api/alcohols/items',
-    updateAlcoholItem: 'api/alcohols/items',
-    deleteAlcoholItem: 'api/alcohols/items',
+    // addToCart
+    addToCart: 'Cart/addToCart',
+    getAddToCart: 'Cart/getCartByUserId?userId=',
+    deleteFromCart: 'Cart/removeItemFromCart',
+    updateQuantity: 'Cart/updateQuantity?userId=',
+
+    // Favorites/Wishlist
+    getFavoriteItems: 'api/items/isFavorite',
+    setFavoriteItem: 'api/items/setFavorite',
+
+    // Home Screen Sections
+    getHomeBanner: 'api/home/banner',
+    updateHomeBanner: 'api/home/banner',
+
+    getHomeCategories: 'api/home/categories',
+    updateHomeCategories: 'api/home/categories',
+
+    getHomeBrands: 'api/home/brands',
+    updateHomeBrands: 'api/home/brands',
+
+    getHomeCombos: 'api/home/combos',
+    createHomeCombo: 'api/home/combos',
+    updateHomeCombo: 'api/home/combos',
+    deleteHomeCombo: 'api/home/combos',
+
+    getHomeTopRated: 'api/home/top-rated',
+    createHomeTopRated: 'api/home/top-rated',
+    updateHomeTopRated: 'api/home/top-rated',
+    deleteHomeTopRated: 'api/home/top-rated',
+
+    getHomeGroceries: 'api/home/groceries',
+    createHomeGrocery: 'api/home/groceries',
+    updateHomeGrocery: 'api/home/groceries',
+    deleteHomeGrocery: 'api/home/groceries',
+
+    getHomeReviews: 'api/home/reviews',
+    createHomeReview: 'api/home/reviews',
+    updateHomeReview: 'api/home/reviews',
+    deleteHomeReview: 'api/home/reviews',
+
+    getHomeOverview: 'api/home/overview',
+    updateHomeOverview: 'api/home/overview',
+
+    // Checkout & Payment
+    createCheckoutSession: 'api/checkout/create-checkout-session',
+    confirmOrder: 'api/checkout/confirm-order',
+    getSessionStatus: 'api/checkout/session-status',
 }
 
 export default endpoints

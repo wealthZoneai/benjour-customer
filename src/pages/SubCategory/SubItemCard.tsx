@@ -1,23 +1,25 @@
 import React, { useState } from "react";
-import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
+import { Heart, ShoppingCart, Plus, Minus, CloudCog } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../../Redux/cartSlice";
 import { addToWishlist, removeFromWishlist } from "../../Redux/wishlistSlice";
 import type { RootState } from "../../Redux/store";
 import toast from "react-hot-toast";
+import { AddToCart, setFavoriteItem } from "../../services/apiHelpers";
 
 interface GroceryProductCardProps {
-  id: number;
+  id: any;
   name: string;
   price: number;
   image: string;
   discount?: number;
   rating?: number;
   category: string;
+  isFavorite?: boolean;
   onViewDetails?: () => void;
 }
 
-const GroceryProductCard: React.FC<GroceryProductCardProps> = ({
+const SubItemCard: React.FC<GroceryProductCardProps> = ({
   id,
   name,
   image,
@@ -25,32 +27,97 @@ const GroceryProductCard: React.FC<GroceryProductCardProps> = ({
   price,
   discount = 5,
   rating = 4,
+  isFavorite,
   onViewDetails,
 }) => {
   const [quantity, setQuantity] = useState(0);
   const dispatch = useDispatch();
 
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
+  const userId = useSelector((state: RootState) => state.user.userId);
   const isWishlisted = wishlist.some((item) => item.id === id);
 
-  const toggleWishlist = () => {
+  const toggleWishlist = async () => {
+    if (!userId) {
+      toast.error("Please login to manage your wishlist");
+      return;
+    }
+
+    const newFavoriteStatus = !isWishlisted;
+
     if (isWishlisted) {
       dispatch(removeFromWishlist(id));
-      toast("Removed from wishlist 💔");
     } else {
       dispatch(addToWishlist({ id, name, price, image, category }));
-      toast.success("Added to wishlist ❤️");
+    }
+
+    try {
+      // Call API to persist favorite status
+      const response = await setFavoriteItem(id, newFavoriteStatus);
+
+      if (!response || !response.data) {
+        // Revert optimistic update on failure
+        if (isWishlisted) {
+          dispatch(addToWishlist({ id, name, price, image, category }));
+        } else {
+          dispatch(removeFromWishlist(id));
+        }
+        toast.error("Failed to update wishlist");
+        return;
+      }
+
+      // Show success message
+      if (newFavoriteStatus) {
+        toast.success("Added to wishlist ❤️");
+      } else {
+        toast("Removed from wishlist 💔");
+      }
+    } catch (error) {
+      console.error("Wishlist API Error:", error);
+
+      // Revert optimistic update on error
+      if (isWishlisted) {
+        dispatch(addToWishlist({ id, name, price, image, category }));
+      } else {
+        dispatch(removeFromWishlist(id));
+      }
+
+      toast.error("Something went wrong while updating wishlist");
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (!userId) {
+      toast.error("Please login before adding items to cart");
+      return;
+    }
+
     if (quantity < 1) {
       toast.error("Please select at least 1 item");
       return;
     }
-    dispatch(addToCart({ id, name, image, price, quantity }));
-    toast.success(`${name} added to your cart 🛒`);
+
+    try {
+      // --- Backend API Call ---
+      const response = await AddToCart(userId, id, quantity);
+      console.log(response?.data?.cartItems.length);
+      // Check if API failed
+      if (!response || !response) {
+        toast.error("Failed to add item to cart");
+        return;
+      }
+
+      // --- Update Redux Cart State ---
+      dispatch(addToCart({ id, name, image, price, quantity }));
+
+      toast.success(`${name} added to cart 🛒`);
+    } catch (error) {
+      console.error("Cart API Error:", error);
+      toast.error("Something went wrong while adding item");
+    }
   };
+
+
 
   return (
     <div className="relative group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
@@ -67,15 +134,14 @@ const GroceryProductCard: React.FC<GroceryProductCardProps> = ({
       {/* Wishlist Button */}
       <button
         onClick={toggleWishlist}
-        className={`absolute top-3 right-3 z-10 transition-all duration-300 ${
-          isWishlisted
-            ? "text-red-500 scale-110"
-            : "text-gray-400 hover:text-red-400"
-        }`}
+        className={`absolute top-3 right-3 z-10 transition-all duration-300 ${isWishlisted
+          ? "text-red-500 scale-110"
+          : "text-gray-400 hover:text-red-400"
+          }`}
       >
         <Heart
           size={18}
-          className={isWishlisted ? "fill-red-500 text-red-500" : ""}
+          className={isWishlisted ? "fill-red-500 text-red-500" : "fill-white text-white"}
         />
       </button>
 
@@ -171,4 +237,4 @@ const GroceryProductCard: React.FC<GroceryProductCardProps> = ({
   );
 };
 
-export default GroceryProductCard;
+export default SubItemCard;

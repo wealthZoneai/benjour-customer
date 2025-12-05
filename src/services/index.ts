@@ -7,14 +7,10 @@ declare module "axios" {
 }
 
 const httpClient = axios.create({
-  // baseURL: import.meta.env.VITE_API_BASE_URL,
-
-  // baseURL: "https://otrasfinalbackend-31829298905.europe-west1.run.app/",
   baseURL: "http://localhost:8080/",
   headers: {
     deviceType: "Web",
   },
-  // timeout: 30000,
 });
 
 httpClient.interceptors.request.use(

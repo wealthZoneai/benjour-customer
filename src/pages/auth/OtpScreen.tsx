@@ -8,7 +8,7 @@ const OtpScreen: React.FC = () => {
   const location = useLocation();
   const { email } = location.state || {};
 
-  const length = 6;
+  const length = 5;
   const [values, setValues] = useState<string[]>(Array(length).fill(""));
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const [loading, setLoading] = useState(false);

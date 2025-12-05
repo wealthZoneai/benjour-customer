@@ -21,6 +21,13 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    
+    // ✅ Replace entire cart from backend
+    setCart: (state, action: PayloadAction<CartItem[]>) => {
+      state.items = action.payload;
+    },
+
+    // ✅ Add single item (local add-to-cart)
     addToCart: (state, action: PayloadAction<CartItem>) => {
       const existing = state.items.find((i) => i.id === action.payload.id);
       if (existing) {
@@ -32,12 +39,18 @@ const cartSlice = createSlice({
         });
       }
     },
+
+    // ❌ Remove one item
     removeFromCart: (state, action: PayloadAction<number>) => {
       state.items = state.items.filter((i) => i.id !== action.payload);
     },
+
+    // ❌ Empty cart
     clearCart: (state) => {
       state.items = [];
     },
+
+    // ❌ Update quantity to new value
     updateQuantity: (
       state,
       action: PayloadAction<{ id: number; quantity: number }>
@@ -45,10 +58,14 @@ const cartSlice = createSlice({
       const item = state.items.find((i) => i.id === action.payload.id);
       if (item) item.quantity = action.payload.quantity;
     },
+
+    // ➕ Increase quantity
     increaseQuantity: (state, action: PayloadAction<number>) => {
       const item = state.items.find((i) => i.id === action.payload);
       if (item) item.quantity += 1;
     },
+
+    // ➖ Decrease quantity
     decreaseQuantity: (state, action: PayloadAction<number>) => {
       const item = state.items.find((i) => i.id === action.payload);
       if (item) {
@@ -60,6 +77,7 @@ const cartSlice = createSlice({
 });
 
 export const {
+  setCart,
   addToCart,
   removeFromCart,
   clearCart,

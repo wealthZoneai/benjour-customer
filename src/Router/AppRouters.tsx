@@ -3,37 +3,48 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Layout from "../pages/Layout";
 import Home from "../pages/HomeScreen/Home";
-import Grocery from "../pages/Grocery/Grocery";
-import AlcoholDashboard from "../pages/Alcohol/AlcoholDashboard";
-import AlcoholItems from "../pages/Alcohol/AlcoholItems";
+import CategoryPage from "../pages/SubCategory/SubCategoryPage";
+import CategoryItems from "../pages/SubCategory/SubCategoryItems";
 import ScrollToTop from "../components/ScrollToTop";
-import GroceryItems from "../pages/Grocery/GroceryItems";
 import Profile from "../pages/Profile";
 import Wishlist from "../pages/Wishlist";
+import Orders from "../pages/Orders";
 import OtpScreen from "../pages/auth/OtpScreen";
+import SearchResults from "../pages/SearchResults";
+import PaymentSuccess from "../pages/PaymentSuccess";
+import PaymentFailure from "../pages/PaymentFailure";
+import ProcessingPayment from "../pages/PaymentProcessing";
 
 
 const AppRouters = () => {
   return (
     <>
-    <ScrollToTop />
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/home" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/groceries" element={<Grocery />} />
-        <Route path="/grocery/:category" element={<GroceryItems />} />
-        <Route path="/alcohol" element={<AlcoholDashboard />} />
-        <Route path="/alcohol/:category" element={<AlcoholItems />} />
-        <Route path="/wishlist" element={<Wishlist />} />
+      <ScrollToTop />
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/search" element={<SearchResults />} />
 
-      </Route>
+          {/* Dynamic Category Routes */}
+          <Route path="/category/:categoryId" element={<CategoryPage />} />
+          <Route path="/category/:categoryId/items/:subcategoryId" element={<CategoryItems />} />
 
-      {/* Routes without Header & Footer */}
-      <Route path="/" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/otp" element={<OtpScreen />} />
-    </Routes>
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/orders" element={<Orders />} />
+
+          {/* Payment Routes */}
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/processing-payment" element={<ProcessingPayment />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
+
+        </Route>
+
+        {/* Routes without Header & Footer */}
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/otp" element={<OtpScreen />} />
+      </Routes>
     </>
   );
 };

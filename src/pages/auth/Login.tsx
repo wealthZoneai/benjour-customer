@@ -50,12 +50,14 @@ const Login: React.FC = () => {
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("role", response.data.role);
           localStorage.setItem("username", response.data.username);
+          localStorage.setItem("userId", response.data.id);
 
           dispatch(
             setUserData({
               token: response.data.token,
               userName: response.data.username,
               role: response.data.role,
+              userId: response.data.id,
             })
           );
 
