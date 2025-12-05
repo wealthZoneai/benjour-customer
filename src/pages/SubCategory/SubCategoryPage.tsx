@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ChevronRight, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronRight, Plus, Pencil, Trash2, Loader2, Package, ArrowRight } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../Redux/store";
 import CreateCategoryModal from "../../components/CreateCategoryModal";
@@ -38,7 +38,7 @@ const SubCategoryPage: React.FC = () => {
             if (categoryResponse.data) {
                 setCategory(categoryResponse.data);
             }
-            console.log(categoryId);
+
             // Fetch subcategories
             const subcategoriesResponse = await getCategorySubcategories(categoryId!);
             if (subcategoriesResponse.data && Array.isArray(subcategoriesResponse.data)) {
@@ -57,7 +57,6 @@ const SubCategoryPage: React.FC = () => {
         try {
             setLoading(true);
             if (editingSubcategory) {
-                // Update existing subcategory
                 const response = await updateSubcategory(editingSubcategory.id, subcategoryData?.data);
                 if (response.data) {
                     setSubcategories(subcategories.map((sub: any) =>
@@ -67,7 +66,6 @@ const SubCategoryPage: React.FC = () => {
                 }
                 setEditingSubcategory(null);
             } else {
-                // Create new subcategory
                 const response = await createSubcategory(categoryId!, subcategoryData?.data);
                 if (response.data) {
                     toast.success("Subcategory created successfully!");
@@ -117,140 +115,166 @@ const SubCategoryPage: React.FC = () => {
 
     if (fetchingData) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
+            <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+                <div className="text-center">
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full mx-auto mb-4"
+                    />
+                    <p className="text-gray-600 font-medium">Loading categories...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen mt-10 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <div className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 to-gray-100">
             <SubCategoryBanner
                 title={category?.name || "Category"}
                 description={category?.description || "Explore our selection"}
                 image={category?.imageUrl}
             />
 
-            {/* Shop by Subcategory */}
-            <div className="py-12 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-10">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-3">
-                            Shop by Category
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Header Section */}
+                <div className="flex items-center justify-between mb-10">
+                    <div>
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                            Browse Subcategories
                         </h2>
-                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            Explore {category?.name || "our"} collection
+                        <p className="text-gray-600">
+                            {subcategories.length} {subcategories.length === 1 ? "category" : "categories"} available
                         </p>
                     </div>
 
                     {/* Admin Create Button */}
                     {role === "ADMIN" && (
-                        <div className="flex justify-end mb-8">
+                        <button
+                            onClick={() => {
+                                setEditingSubcategory(null);
+                                setIsCreateModalOpen(true);
+                            }}
+                            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+                        >
+                            <Plus size={20} />
+                            Add Subcategory
+                        </button>
+                    )}
+                </div>
+
+                {/* Subcategories Grid */}
+                {subcategories.length === 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-3xl shadow-sm p-16 text-center"
+                    >
+                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Package size={48} className="text-gray-300" />
+                        </div>
+                        <h3 className="text-2xl font-semibold text-gray-700 mb-3">
+                            No Subcategories Yet
+                        </h3>
+                        <p className="text-gray-500 mb-6">
+                            Start by creating your first subcategory
+                        </p>
+                        {role === "ADMIN" && (
                             <button
-                                onClick={() => {
-                                    setEditingSubcategory(null);
-                                    setIsCreateModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-green-700 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
                             >
                                 <Plus size={20} />
                                 Create Subcategory
                             </button>
-                        </div>
-                    )}
+                        )}
+                    </motion.div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <AnimatePresence>
+                            {subcategories.map((subcategory: any, index: number) => (
+                                <motion.div
+                                    key={subcategory.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                                    whileHover={{ y: -8 }}
+                                    className="group relative bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100"
+                                    onClick={() =>
+                                        navigate(`/category/${categoryId}/items/${subcategory.id}`)
+                                    }
+                                >
+                                    {/* Gradient Overlay on Hover */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10" />
 
-                    {/* Subcategories Grid */}
-                    {fetchingData ? (
-                        <div className="flex justify-center items-center py-20">
-                            <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
-                        </div>
-                    ) : (
-                        <>
-                            {subcategories.length === 0 ? (
-                                <div className="w-full py-20 flex justify-center items-center">
-                                    <p className="text-gray-500 text-lg font-medium">
-                                        No Data Found
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                                    {subcategories.map((subcategory: any, index: number) => (
-                                        <motion.div
-                                            key={subcategory.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.1 * (index + 1) }}
-                                            whileHover={{ scale: 1.03 }}
-                                            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
-                                            onClick={() =>
-                                                navigate(`/category/${categoryId}/items/${subcategory.id}`)
+                                    {/* Image Container */}
+                                    <div className="relative h-48 overflow-hidden rounded-t-2xl bg-gray-100">
+                                        <img
+                                            src={
+                                                subcategory.imageUrl ||
+                                                "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80"
                                             }
-                                        >
-                                            {/* IMAGE */}
-                                            <div className="relative h-44 w-full overflow-hidden rounded-t-2xl">
-                                                <img
-                                                    src={
-                                                        subcategory.imageUrl ||
-                                                        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80"
-                                                    }
-                                                    alt={subcategory.name}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                />
+                                            alt={subcategory.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
 
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                                        {/* Gradient Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-                                                {/* ADMIN BUTTONS */}
-                                                {role === "ADMIN" && (
-                                                    <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                        {/* EDIT */}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleEditClick(subcategory, e);
-                                                            }}
-                                                            className="p-2 bg-white/90 rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-sm transition-transform hover:scale-110"
-                                                        >
-                                                            <Pencil size={16} />
-                                                        </button>
+                                        {/* Admin Buttons */}
+                                        {role === "ADMIN" && (
+                                            <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                {/* Edit */}
+                                                <button
+                                                    onClick={(e) => handleEditClick(subcategory, e)}
+                                                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-md transition-transform hover:scale-110"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
 
-                                                        {/* DELETE */}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDeleteClick(subcategory, e);
-                                                            }}
-                                                            className="p-2 bg-white/90 rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm transition-transform hover:scale-110"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                {/* Delete */}
+                                                <button
+                                                    onClick={(e) => handleDeleteClick(subcategory, e)}
+                                                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 shadow-md transition-transform hover:scale-110"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
+                                        )}
+                                    </div>
 
-                                            {/* CONTENT */}
-                                            <div className="p-6">
-                                                <h3 className="text-xl font-semibold text-gray-900 mb-2 capitalize">
-                                                    {subcategory.name}
-                                                </h3>
+                                    {/* Content */}
+                                    <div className="p-5">
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2 capitalize line-clamp-1">
+                                            {subcategory.name}
+                                        </h3>
 
-                                                <p className="text-gray-600 text-sm mb-4">
-                                                    {subcategory.description || "Explore this category"}
-                                                </p>
+                                        <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
+                                            {subcategory.description || "Explore this category"}
+                                        </p>
 
-                                                <div className="flex items-center text-sm font-medium text-green-600">
-                                                    Explore <ChevronRight className="w-4 h-4 ml-1" />
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                </div>
+                                        {/* Explore Button */}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold text-emerald-600 group-hover:text-emerald-700 transition-colors flex items-center gap-1">
+                                                Explore
+                                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                            </span>
+                                            <ChevronRight
+                                                size={20}
+                                                className="text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                )}
             </div>
 
+            {/* Modals */}
             <CreateCategoryModal
                 isOpen={isCreateModalOpen}
                 onClose={handleCloseModal}

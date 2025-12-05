@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Star, Plus, Pencil, Trash2, X, UploadCloud, Loader2 } from "lucide-react";
+import { Star, Plus, Pencil, Trash2, X, UploadCloud, Loader2, TrendingUp, Award } from "lucide-react";
 import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
@@ -29,15 +29,15 @@ const defaultProducts: Product[] = [
     name: "Rose Wine",
     image: "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?auto=format&fit=crop&w=800&q=60",
     rating: 5,
-    reviews: 1,
+    reviews: 124,
     category: "top",
   },
   {
     id: 2,
     name: "Honey Beer",
     image: "https://images.unsplash.com/photo-1542959863-3f384b6b1624?auto=format&fit=crop&w=800&q=60",
-    rating: 4,
-    reviews: 1,
+    rating: 4.5,
+    reviews: 89,
     category: "best",
   },
   {
@@ -46,7 +46,7 @@ const defaultProducts: Product[] = [
     image:
       "https://images.unsplash.com/photo-1590080875832-8405c0b4c44e?auto=format&fit=crop&w=800&q=60",
     rating: 5,
-    reviews: 1,
+    reviews: 156,
     category: "top",
   },
   {
@@ -54,8 +54,8 @@ const defaultProducts: Product[] = [
     name: "Brazilian Rum",
     image:
       "https://images.unsplash.com/photo-1610911254767-40f1e01ac8d0?auto=format&fit=crop&w=800&q=60",
-    rating: 5,
-    reviews: 1,
+    rating: 4.8,
+    reviews: 203,
     category: "best",
   },
   {
@@ -63,8 +63,8 @@ const defaultProducts: Product[] = [
     name: "Dessert Tequila",
     image:
       "https://images.unsplash.com/photo-1610641818989-77cf0b4574d6?auto=format&fit=crop&w=800&q=60",
-    rating: 5,
-    reviews: 1,
+    rating: 4.9,
+    reviews: 178,
     category: "top",
   },
   {
@@ -72,32 +72,11 @@ const defaultProducts: Product[] = [
     name: "Premium Vodka",
     image:
       "https://parisdrinksguide.com/cont/blog/imagePot/08312021084700000000-612e32d4e5217.jpg",
-    rating: 5,
-    reviews: 1,
+    rating: 4.7,
+    reviews: 142,
     category: "best",
   },
 ];
-
-const ImageWithLoader: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isError, setIsError] = useState(false);
-
-  return (
-    <div className="relative w-full h-[320px] overflow-hidden rounded-t-2xl bg-gray-200">
-      {!isLoaded && !isError && (
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 animate-pulse" />
-      )}
-      <img
-        src={isError ? fallbackImage : src}
-        alt={alt}
-        onLoad={() => setIsLoaded(true)}
-        onError={() => setIsError(true)}
-        className={`w-full h-full object-cover transform transition-transform duration-700 ${isLoaded ? "opacity-100" : "opacity-0"
-          } hover:scale-110`}
-      />
-    </div>
-  );
-};
 
 const TopRating: React.FC = () => {
   const { role } = useSelector((state: RootState) => state.user);
@@ -138,94 +117,188 @@ const TopRating: React.FC = () => {
   );
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-10 relative">
-      {/* Admin Add Button */}
-      {role === "ADMIN" && (
-        <div className="absolute top-10 right-6">
-          <button
-            onClick={() => {
-              setEditingItem(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors shadow-lg"
-          >
-            <Plus size={18} /> Add Item
-          </button>
-        </div>
-      )}
+    <section className="w-full bg-white py-1 px-4 md:px-2 relative overflow-hidden">
+      {/* Background Decoration */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-yellow-100/30 to-orange-100/30 rounded-full blur-3xl -z-10" />
 
-      {/* Filter Buttons */}
-      <div className="flex justify-center mb-10 space-x-4">
-        {["top", "best"].map((type) => (
-          <button
-            key={type}
-            onClick={() => setFilter(type as "top" | "best")}
-            className={`px-6 py-2 border border-yellow-500 font-semibold text-sm transition-all duration-300 ${filter === type
-                ? "bg-yellow-500 text-white shadow-md scale-105"
-                : "text-yellow-600 hover:bg-yellow-100"
-              }`}
-          >
-            {type === "top" ? "TOP RATING" : "BEST SELLING"}
-          </button>
-        ))}
-      </div>
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={20} className="text-yellow-600" />
+              <span className="text-sm font-semibold text-yellow-600 uppercase tracking-wide">
+                Popular Picks
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Top Rated Products
+            </h2>
 
-      {/* Product Cards */}
-      <div className="flex flex-wrap justify-center gap-10">
-        {filteredProducts.map((item) => (
-          <div
-            key={item.id}
-            className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 w-[380px] overflow-hidden relative"
-          >
-            {/* Image */}
-            <ImageWithLoader src={item.image} alt={item.name} />
-
-            {/* Admin Actions */}
-            {role === "ADMIN" && (
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            {/* Filter Buttons */}
+            <div className="flex gap-3">
+              {[
+                { type: "top", label: "Top Rating", icon: Star },
+                { type: "best", label: "Best Selling", icon: Award }
+              ].map(({ type, label, icon: Icon }) => (
                 <button
-                  onClick={() => {
-                    setEditingItem(item);
-                    setIsModalOpen(true);
-                  }}
-                  className="p-2 bg-white/90 text-blue-600 rounded-full hover:bg-white shadow-sm"
+                  key={type}
+                  onClick={() => setFilter(type as "top" | "best")}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${filter === type
+                      ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg scale-105"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
-                  <Pencil size={16} />
+                  <Icon size={16} />
+                  {label}
                 </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-2 bg-white/90 text-red-600 rounded-full hover:bg-white shadow-sm"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            )}
-
-            {/* Content */}
-            <div className="p-5 text-center transition-transform duration-500 group-hover:-translate-y-1">
-              {/* Star Rating */}
-              <div className="flex items-center justify-center mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={18}
-                    fill={i < item.rating ? "#FFD700" : "none"}
-                    stroke={i < item.rating ? "#FFD700" : "#ccc"}
-                    className="transition-transform duration-300 group-hover:scale-110"
-                  />
-                ))}
-                <span className="text-gray-500 text-sm ml-2">
-                  ({item.reviews} review)
-                </span>
-              </div>
-
-              {/* Product Name */}
-              <h3 className="text-gray-900 font-semibold text-lg transition-all duration-300 group-hover:text-yellow-500 group-hover:-translate-y-1">
-                {item.name}
-              </h3>
+              ))}
             </div>
           </div>
-        ))}
+
+          {role === "ADMIN" && (
+            <button
+              onClick={() => {
+                setEditingItem(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-yellow-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg hover:bg-yellow-700 hover:shadow-xl transition-all"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">Add Item</span>
+            </button>
+          )}
+        </div>
+
+        {/* Horizontal Scrolling Products */}
+        <div className="relative">
+          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+            {filteredProducts.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="flex-shrink-0 w-[280px] sm:w-[320px] snap-start"
+              >
+                <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden relative">
+                  {/* Image */}
+                  <div className="relative h-[280px] overflow-hidden bg-gray-200">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      onError={(e) => {
+                        e.currentTarget.src = fallbackImage;
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+
+                    {/* Rating Badge */}
+                    <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
+                      <div className="flex items-center gap-1">
+                        <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-bold text-gray-900">{item.rating}</span>
+                      </div>
+                    </div>
+
+                    {/* Admin Controls */}
+                    {role === "ADMIN" && (
+                      <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                        <button
+                          onClick={() => {
+                            setEditingItem(item);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white shadow-md transition-colors"
+                        >
+                          <Pencil size={16} className="text-blue-600" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white shadow-md transition-colors"
+                        >
+                          <Trash2 size={16} className="text-red-600" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">
+                      {item.name}
+                    </h3>
+
+                    {/* Rating Stars */}
+                    <div className="flex items-center gap-1 mb-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={14}
+                          className={`${i < Math.floor(item.rating)
+                              ? "text-yellow-500 fill-yellow-500"
+                              : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({item.reviews} reviews)
+                      </span>
+                    </div>
+
+                    {/* View Button */}
+                    <button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2.5 rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg">
+                      View Details
+                    </button>
+                  </div>
+
+                  {/* Hover Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Add New Card (Admin Only) */}
+            {role === "ADMIN" && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: filteredProducts.length * 0.1 }}
+                className="flex-shrink-0 w-[280px] sm:w-[320px] snap-start"
+              >
+                <button
+                  onClick={() => {
+                    setEditingItem(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="w-full h-[440px] rounded-2xl border-2 border-dashed border-gray-300 hover:border-yellow-500 bg-gray-50 hover:bg-yellow-50 transition-all duration-300 flex flex-col items-center justify-center gap-4 group"
+                >
+                  <div className="w-16 h-16 rounded-full bg-gray-200 group-hover:bg-yellow-100 flex items-center justify-center transition-colors">
+                    <Plus size={32} className="text-gray-400 group-hover:text-yellow-600 transition-colors" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-700 group-hover:text-yellow-600 transition-colors">
+                      Add New Product
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Click to create
+                    </p>
+                  </div>
+                </button>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Scroll Hint */}
+          {filteredProducts.length > 3 && (
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+          )}
+        </div>
       </div>
 
       <TopRatedModal
@@ -243,6 +316,7 @@ const TopRating: React.FC = () => {
           setIsModalOpen(false);
         }}
       />
+
     </section>
   );
 };
@@ -330,16 +404,16 @@ const TopRatedModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onS
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-xl"
+            className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
           >
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-xl font-bold">{initialData ? "Edit Item" : "New Item"}</h2>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -417,14 +491,14 @@ const TopRatedModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onS
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-lg hover:from-yellow-700 hover:to-orange-700 disabled:opacity-50 flex items-center gap-2 transition-all"
                 >
                   {loading && <Loader2 size={16} className="animate-spin" />}
                   Save

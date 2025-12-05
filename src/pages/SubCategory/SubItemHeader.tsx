@@ -1,50 +1,102 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
 interface PageHeaderProps {
   title: string;
-  tagline?: string; // ✅ optional tagline
-  emoji?: string;   // ✅ optional emoji
+  tagline?: string;
+  emoji?: string;
+  imageUrl?: string;
 }
 
-const SubItemHeader: React.FC<PageHeaderProps> = ({ title, tagline, emoji }) => {
+const SubItemHeader: React.FC<PageHeaderProps> = ({
+  title,
+  tagline,
+  emoji,
+  imageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&q=80",
+}) => {
   return (
-    <header className="relative mx-1 md:mx-2 h-[205px] md:h-[255px] overflow-hidden mb-5 rounded-3xl shadow-lg">
-      {/* ✅ Background Image */}
-      <img
-        src="https://images.unsplash.com/photo-1506617564039-2f3b650b7010?ixlib=rb-4.1.0&auto=format&fit=crop&w=1600&q=80"
-        alt={`${title} Banner`}
-        className="absolute inset-0 w-full h-full object-cover object-right rounded-3xl"
-      />
-
-      {/* ✅ Gradient Overlay */}
-      <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent rounded-3xl" />
-
-      {/* ✅ Title Section */}
-      <div className="relative z-10 flex items-center h-full pl-6 md:pl-12">
-        <div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-white drop-shadow-lg tracking-wide flex items-center gap-2">
-            {emoji && <span className="text-4xl md:text-5xl">{emoji}</span>}
-            {title}
-          </h1>
-
-          <div className="w-24 h-1 bg-amber-400 mt-2 rounded-full" />
-
-          {/* ✅ Optional tagline */}
-          {tagline ? (
-            <p className="text-sm md:text-base text-gray-200 mt-2 italic">
-              {tagline}
-            </p>
-          ) : (
-            <p className="text-sm md:text-base text-gray-200 mt-2 italic">
-              Explore our exclusive collection
-            </p>
-          )}
-        </div>
+    <motion.header
+      initial={{ opacity: 0, y: -15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="relative mx-4 md:mx-6 h-[240px] md:h-[300px] rounded-[32px] overflow-hidden shadow-2xl"
+    >
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <img
+          src={imageUrl}
+          alt="banner"
+          className="w-full h-full object-cover scale-[1.1]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-transparent" />
       </div>
 
-      {/* ✅ Soft Shine Animation */}
-      <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent animate-shimmer rounded-3xl" />
-    </header>
+      {/* Floating premium glow */}
+      <motion.div
+        animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.3, 1] }}
+        transition={{ duration: 6, repeat: Infinity }}
+        className="absolute -bottom-20 -right-20 w-72 h-72 bg-emerald-400/20 blur-3xl rounded-full"
+      />
+
+      {/* Content */}
+      <div className="relative z-10 h-full flex flex-col justify-center px-7 md:px-12">
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-3"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg">
+            <Sparkles size={16} className="text-emerald-300" />
+            <span className="text-white text-sm font-semibold tracking-wide">
+              Premium Collection
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.6 }}
+          className="text-white text-4xl md:text-6xl font-bold leading-tight flex items-center gap-3 drop-shadow-lg"
+        >
+          {emoji && (
+            <motion.span
+              animate={{ rotate: [0, 12, -12, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="text-5xl"
+            >
+              {emoji}
+            </motion.span>
+          )}
+          {title}
+        </motion.h1>
+
+        {/* Gradient Line */}
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: "140px" }}
+          transition={{ duration: 0.7 }}
+          className="h-1.5 mt-4 bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 rounded-full"
+        />
+
+        {/* Tagline */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="text-gray-200 text-base md:text-lg mt-3 max-w-xl"
+        >
+          {tagline || "Explore handpicked premium-quality items curated for you."}
+        </motion.p>
+      </div>
+
+      {/* Smooth corner lighting */}
+      <div className="absolute inset-0 pointer-events-none border border-white/10 rounded-[32px]" />
+    </motion.header>
   );
 };
 
