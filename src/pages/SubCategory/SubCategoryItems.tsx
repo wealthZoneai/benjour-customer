@@ -7,7 +7,7 @@ import type { RootState } from "../../Redux/store";
 import CreateItemModal from "../../components/CreateItemModal";
 import SubItemCard from "./SubItemCard";
 import SubItemHeader from "./SubItemHeader";
-import { getSubcategoryItems, createItem, updateItem, deleteItem } from "../../services/apiHelpers";
+import { getSubcategoryItems, createItem, updateItem, deleteItem, uploadBulkItems } from "../../services/apiHelpers";
 import { toast } from "react-hot-toast";
 
 // Updated product interface to match CreateItemModal fields
@@ -128,6 +128,34 @@ const GroceryItems: React.FC = () => {
             toast.error(error?.response?.data?.error || "Failed to save item");
         }
     };
+    const handleSubmitBulkItem = async ({
+        excelFile,
+        zipFile
+    }: {
+        excelFile: File;
+        zipFile: File;
+    }) => {
+        if (!excelFile) {
+            alert("Excel file missing");
+            return;
+        }
+        if (!zipFile) {
+            alert("ZIP file missing");
+            return;
+        }
+
+        try {
+            await uploadBulkItems(subcategoryId!, excelFile, zipFile);
+            toast.success("Items uploaded successfully!");
+            fetchItems();
+            setItemModalOpen(false);
+        } catch (error: any) {
+            console.error("Error uploading items:", error);
+            toast.error(error?.response?.data?.error || "Failed to upload");
+        }
+    };
+
+
 
     // Loading state
     if (loading) {
@@ -438,6 +466,7 @@ const GroceryItems: React.FC = () => {
                 }}
                 initialData={editingItem}
                 onSubmit={handleSubmitItem}
+                onBulkSubmit={handleSubmitBulkItem}
             />
         </div>
     );

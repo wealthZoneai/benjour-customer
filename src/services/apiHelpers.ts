@@ -31,6 +31,50 @@ export function UserOtp({ email, otp }: any) {
 }
 
 // ============================================
+//  ORDERS SYSTEM
+// ============================================
+
+export function getCurrentOrder(userId: string) {
+  return server.get(`${endpoints.getCurrentOrder}${userId}`, { requiresAuth: true });
+}
+
+export function getAllOrders(userId: string) {
+  return server.get(`${endpoints.getAllOrders}${userId}`, { requiresAuth: true });
+}
+
+export function getUserProfile(userId: string) {
+  return server.get(`${endpoints.getProfile}${userId}`, { requiresAuth: true });
+}
+
+export function createUserProfile(userId: string, data: any) {
+  const formData = new FormData();
+  formData.append("firstName", data.firstName);
+  formData.append("lastName", data.lastName);
+  formData.append("phoneNumber", data.phoneNumber);
+  formData.append("email", data.email);
+  formData.append("location", data.location);
+  if (data.file) {
+    formData.append("file", data.file);
+  }
+
+  return server.post(`${endpoints.createProfile}${userId}`, formData, { requiresAuth: true });
+}
+
+export function updateUserProfile(userId: string, data: any) {
+  const formData = new FormData();
+  formData.append("firstName", data.firstName);
+  formData.append("lastName", data.lastName);
+  formData.append("phoneNumber", data.phoneNumber);
+  formData.append("email", data.email);
+  formData.append("location", data.location);
+  if (data.file) {
+    formData.append("file", data.file);
+  }
+
+  return server.put(`${endpoints.updateProfile}${userId}`, formData, { requiresAuth: true });
+}
+
+// ============================================
 //  CATEGORY SYSTEM
 // ============================================
 
@@ -138,6 +182,7 @@ export function createItem(subCategoryId: string, data: any) {
   formData.append("price", data.price.toString());
   formData.append("discount", data.discount?.toString() || "0");
   formData.append("rating", data.rating?.toString() || "0");
+  formData.append("quantity", data.quantity?.toString() || "");
   formData.append("isFavorite", data.isFavorite ? "true" : "false");
 
   if (data.file || data.imageFile) {
@@ -157,6 +202,7 @@ export function updateItem(itemId: string, data: any) {
   formData.append("price", data.price.toString());
   formData.append("discount", data.discount?.toString() || "0");
   formData.append("rating", data.rating?.toString() || "0");
+  formData.append("quantity", data.quantity?.toString() || "");
   formData.append("isFavorite", data.isFavorite ? "true" : "false");
 
   if (data.file || data.imageFile) {
@@ -167,9 +213,26 @@ export function updateItem(itemId: string, data: any) {
     requiresAuth: true,
   });
 }
+
+// Upload bulk items
+export const uploadBulkItems = async (subcategoryId: string, excelFile: File, zipFile: File) => {
+  const formData = new FormData();
+
+  formData.append("excelFile", excelFile);
+  formData.append("zipFile", zipFile);
+  formData.append("subCategoryId", subcategoryId);
+
+  return server.post(endpoints.uploadBulkItems, formData, {
+    requiresAuth: true,
+  });
+}
 // Delete an item
 export function deleteItem(itemId: string) {
   return server.delete(`${endpoints.deleteItem}${itemId}`, { requiresAuth: true });
+}
+
+export function searchItems(query: string) {
+  return server.get(`${endpoints.searchItems}${query}`, { requiresAuth: true });
 }
 // addToCart
 export function AddToCart(userId: string, itemId: string, quantity: any) {

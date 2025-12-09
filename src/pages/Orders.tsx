@@ -17,6 +17,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../Redux/store";
 import toast from "react-hot-toast";
 import ReviewModal, { type ReviewData } from "../components/ReviewModal";
+import { getCurrentOrder, getAllOrders } from "../services/apiHelpers";
 
 interface OrderItem {
     id: number;
@@ -52,75 +53,79 @@ const Orders: React.FC = () => {
 
     const userId = useSelector((state: RootState) => state.user.userId);
 
-    // Mock data - Replace with actual API call
+    // API Data Integration
     useEffect(() => {
         const fetchOrders = async () => {
             setLoading(true);
             try {
-                // TODO: Replace with actual API call
-                // const response = await getOrders(userId);
+                if (!userId) return;
 
-                // Mock data
-                const mockOrders: Order[] = [
-                    {
-                        id: "1",
-                        orderNumber: "ORD-2024-001",
-                        date: "2024-12-05T14:30:00",
-                        status: "out_for_delivery",
-                        totalAmount: 450,
-                        deliveryAddress: "123 Main Street, Apartment 4B, Mumbai - 400001",
-                        estimatedDelivery: "30 mins",
-                        items: [
-                            {
-                                id: 1,
-                                name: "Fresh Tomatoes",
-                                quantity: 2,
-                                price: 50,
-                                image: "https://images.unsplash.com/photo-1546470427-227b9f0c1b8f?w=100"
-                            },
-                            {
-                                id: 2,
-                                name: "Organic Milk",
-                                quantity: 1,
-                                price: 60,
-                                image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=100"
-                            }
-                        ],
+                const [currentOrderRes, allOrdersRes] = await Promise.all([
+                    getCurrentOrder(userId).catch((err: any) => {
+                        console.error("Error fetching current order:", err);
+                        return { data: [] };
+                    }),
+                    getAllOrders(userId).catch((err: any) => {
+                        console.error("Error fetching all orders:", err);
+                        return { data: [] };
+                    })
+                ]);
+
+                // Helper function to map API item to UI item
+                const mapApiItemToUiItem = (apiItem: any) => ({
+                    id: apiItem.item?.id || Math.random(),
+                    name: apiItem.item?.name || "Unknown Item",
+                    quantity: apiItem.quantity || 1,
+                    price: apiItem.item?.price || 0,
+                    image: apiItem.item?.imageUrl || "https://via.placeholder.com/100"
+                });
+
+                // Helper to create order object from API data
+                const mapToOrder = (data: any, statusOverride?: Order["status"]): Order => {
+                    // Ensure we have an array of items
+                    const items = data.orderItems ? data.orderItems.map(mapApiItemToUiItem) : [mapApiItemToUiItem(data)];
+                    // Calculate total if not provided
+                    const totalByItems = items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
+
+                    return {
+                        id: data.id?.toString() || Math.random().toString(),
+                        orderNumber: `ORD-${data.id || Math.random().toString().substr(2, 6)}`,
+                        date: new Date().toISOString(), // API doesn't seem to return date in snippets, using current for now or need to check full response
+                        status: statusOverride || "pending", // Default to pending if logic not applied
+                        totalAmount: data.totalAmount || totalByItems,
+                        deliveryAddress: "Default Address", // API missing address in snippets
+                        items: items,
                         trackingSteps: [
-                            { label: "Order Placed", time: "2:30 PM", completed: true },
-                            { label: "Order Confirmed", time: "2:32 PM", completed: true },
-                            { label: "Preparing Order", time: "2:35 PM", completed: true },
-                            { label: "Out for Delivery", time: "2:45 PM", completed: true },
+                            { label: "Order Placed", completed: true },
+                            { label: "Order Confirmed", completed: true },
+                            { label: "Out for Delivery", completed: false },
                             { label: "Delivered", completed: false }
                         ]
-                    },
-                    {
-                        id: "2",
-                        orderNumber: "ORD-2024-002",
-                        date: "2024-12-04T10:15:00",
-                        status: "delivered",
-                        totalAmount: 890,
-                        deliveryAddress: "123 Main Street, Apartment 4B, Mumbai - 400001",
-                        items: [
-                            {
-                                id: 3,
-                                name: "Basmati Rice 5kg",
-                                quantity: 1,
-                                price: 450,
-                                image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=100"
-                            }
-                        ],
-                        trackingSteps: [
-                            { label: "Order Placed", time: "10:15 AM", completed: true },
-                            { label: "Order Confirmed", time: "10:17 AM", completed: true },
-                            { label: "Preparing Order", time: "10:20 AM", completed: true },
-                            { label: "Out for Delivery", time: "10:45 AM", completed: true },
-                            { label: "Delivered", time: "11:30 AM", completed: true }
-                        ]
-                    }
-                ];
+                    };
+                };
 
-                setOrders(mockOrders);
+                let formattedOrders: Order[] = [];
+
+                // Process Current Orders
+                // The snippet shows 'currentorder' returning a single item structure or list. 
+                // Assuming it might be a list of active orders.
+                const currentData = currentOrderRes.data;
+                if (Array.isArray(currentData)) {
+                    formattedOrders = [...formattedOrders, ...currentData.map((o: any) => mapToOrder(o, "out_for_delivery"))];
+                } else if (currentData && typeof currentData === 'object') {
+                    formattedOrders.push(mapToOrder(currentData, "out_for_delivery"));
+                }
+
+                const allData = allOrdersRes.data;
+                if (Array.isArray(allData)) {
+                    formattedOrders = [...formattedOrders, ...allData.map((o: any) => mapToOrder(o, "delivered"))];
+                } else if (allData && typeof allData === 'object') {
+                    formattedOrders.push(mapToOrder(allData, "delivered"));
+                }
+
+                // Deduplicate if needed or just set
+                setOrders(formattedOrders);
+
             } catch (error) {
                 console.error("Error fetching orders:", error);
                 toast.error("Failed to load orders");
@@ -182,7 +187,7 @@ const Orders: React.FC = () => {
     };
 
     const getStatusText = (status: Order["status"]) => {
-        return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+        return status.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
     };
 
     const ongoingOrders = orders.filter(
@@ -219,8 +224,8 @@ const Orders: React.FC = () => {
                     <button
                         onClick={() => setActiveTab("ongoing")}
                         className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === "ongoing"
-                                ? "bg-emerald-600 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
+                            ? "bg-emerald-600 text-white shadow-md"
+                            : "text-gray-600 hover:bg-gray-100"
                             }`}
                     >
                         Ongoing ({ongoingOrders.length})
@@ -228,8 +233,8 @@ const Orders: React.FC = () => {
                     <button
                         onClick={() => setActiveTab("history")}
                         className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === "history"
-                                ? "bg-emerald-600 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
+                            ? "bg-emerald-600 text-white shadow-md"
+                            : "text-gray-600 hover:bg-gray-100"
                             }`}
                     >
                         History ({pastOrders.length})
@@ -300,7 +305,7 @@ const Orders: React.FC = () => {
 
                                     {/* Items */}
                                     <div className="space-y-3">
-                                        {order.items.map((item) => (
+                                        {order.items.map((item: OrderItem) => (
                                             <div key={item.id} className="flex items-center gap-3">
                                                 <img
                                                     src={item.image}
@@ -410,14 +415,14 @@ const Orders: React.FC = () => {
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-gray-800 mb-4">Order Status</h3>
                                     <div className="space-y-4">
-                                        {selectedOrder.trackingSteps.map((step, index) => (
+                                        {selectedOrder.trackingSteps.map((step: any, index: number) => (
                                             <div key={index} className="flex gap-4">
                                                 {/* Timeline */}
                                                 <div className="flex flex-col items-center">
                                                     <div
                                                         className={`w-10 h-10 rounded-full flex items-center justify-center ${step.completed
-                                                                ? "bg-emerald-600 text-white"
-                                                                : "bg-gray-200 text-gray-400"
+                                                            ? "bg-emerald-600 text-white"
+                                                            : "bg-gray-200 text-gray-400"
                                                             }`}
                                                     >
                                                         {step.completed ? (

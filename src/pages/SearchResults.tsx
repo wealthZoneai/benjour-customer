@@ -1,55 +1,98 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { calcLength, motion } from "framer-motion";
 import { Search, ShoppingCart, Heart } from "lucide-react";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../Redux/cartSlice";
-import { addToWishlist } from "../Redux/wishlistSlice";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
+import { searchItems, AddToCart, setFavoriteItem } from "../services/apiHelpers";
+import type { RootState } from "../Redux/store";
 
-// Mock product data (replace with actual API call or Redux store)
-const mockProducts = [
-    { id: 1, name: "Fresh Organic Apples", price: 4.99, image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400", category: "Groceries", description: "Fresh and crispy organic apples" },
-    { id: 2, name: "Premium Red Wine", price: 24.99, image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400", category: "Alcohol", description: "Fine red wine from Italy" },
-    { id: 3, name: "Craft Beer Pack", price: 15.99, image: "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400", category: "Alcohol", description: "Assorted craft beers" },
-    { id: 4, name: "Fresh Orange Juice", price: 5.99, image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400", category: "Beverages", description: "100% fresh squeezed orange juice" },
-    { id: 5, name: "Whole Grain Bread", price: 3.49, image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400", category: "Groceries", description: "Healthy whole grain bread" },
-    { id: 6, name: "Sparkling Water", price: 2.99, image: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400", category: "Beverages", description: "Refreshing sparkling water" },
-    { id: 7, name: "Whiskey Bottle", price: 45.99, image: "https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=400", category: "Alcohol", description: "Premium aged whiskey" },
-    { id: 8, name: "Greek Yogurt", price: 4.49, image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400", category: "Groceries", description: "Creamy Greek yogurt" },
-    { id: 9, name: "Avocado Pack", price: 6.99, image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400", category: "Groceries", description: "Fresh ripe avocados" },
-    { id: 10, name: "Coffee Beans", price: 12.99, image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400", category: "Beverages", description: "Premium arabica coffee beans" },
-];
+interface Product {
+    id: number;
+    name: string;
+    price: number;
+    discount?: number;
+    rating?: number;
+    imageUrl?: string;
+    description?: string;
+    isFavorite?: boolean;
+    category?: string; // Optional if API doesn't return it
+}
 
 const SearchResults: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const userId = useSelector((state: RootState) => state.user.userId);
     const query = searchParams.get("q") || "";
-    const [filteredProducts, setFilteredProducts] = useState(mockProducts);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (query.trim()) {
-            const results = mockProducts.filter(
-                (product) =>
-                    product.name.toLowerCase().includes(query.toLowerCase()) ||
-                    product.category.toLowerCase().includes(query.toLowerCase()) ||
-                    product.description.toLowerCase().includes(query.toLowerCase())
-            );
-            setFilteredProducts(results);
-        } else {
-            setFilteredProducts(mockProducts);
-        }
+        const fetchSearchResults = async () => {
+            if (!query.trim()) {
+                setProducts([]);
+                return;
+            }
+            setLoading(true);
+            try {
+                const response = await searchItems(query);
+                if (response.data) {
+                    // Normalize data if necessary (e.g. image vs imageUrl)
+                    const mappedProducts = response.data.map((item: any) => ({
+                        ...item,
+                        // Ensure we use the correct image field. API mock shows 'imageUrl' or 'images' in previous contexts.
+                        // The screenshot shows "imageUrl" in the response body.
+                        imageUrl: item.imageUrl || item.image || "https://via.placeholder.com/400",
+                        // Ensure category exists or default
+                        category: item.category || "General"
+                    }));
+                    setProducts(mappedProducts);
+                } else {
+                    setProducts([]);
+                }
+            } catch (error) {
+            toast.error("Failed to fetch search results.");
+                setProducts([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSearchResults();
     }, [query]);
 
-    const handleAddToCart = (product: typeof mockProducts[0]) => {
-        dispatch(addToCart({ ...product, quantity: 1 }));
-        toast.success(`${product.name} added to cart!`);
+    const handleAddToCart = async (product: Product) => {
+        if (!userId) {
+            toast.error("Please log in to add items to cart.");
+            return;
+        }
+        try {
+            await AddToCart(userId, product.id.toString(), 1);
+            toast.success(`${product.name} added to cart!`);
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            toast.error("Failed to add to cart.");
+        }
     };
 
-    const handleAddToWishlist = (product: typeof mockProducts[0]) => {
-        dispatch(addToWishlist(product));
-        toast.success(`${product.name} added to wishlist!`);
+    const handleToggleFavorite = async (product: Product) => {
+        if (!userId) {
+            toast.error("Please log in to manage favorites.");
+            return;
+        }
+        try {
+            const newStatus = !product.isFavorite;
+            await setFavoriteItem(product.id, newStatus);
+            // Optimistic update
+            setProducts(prev => prev.map(p =>
+                p.id === product.id ? { ...p, isFavorite: newStatus } : p
+            ));
+            toast.success(newStatus ? "Added to favorites!" : "Removed from favorites!");
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            toast.error("Failed to update favorite status.");
+        }
     };
 
     const containerVariants = {
@@ -81,20 +124,29 @@ const SearchResults: React.FC = () => {
                             Showing results for <span className="font-semibold text-gray-900">"{query}"</span>
                         </p>
                     )}
-                    <p className="text-sm text-gray-500 mt-1">
-                        {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
-                    </p>
+                    {!loading && (
+                        <p className="text-sm text-gray-500 mt-1">
+                            {products.length} product{products.length !== 1 ? 's' : ''} found
+                        </p>
+                    )}
                 </div>
 
+                {/* Loading State */}
+                {loading && (
+                    <div className="flex justify-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                    </div>
+                )}
+
                 {/* Results */}
-                {filteredProducts.length > 0 ? (
+                {!loading && (products.length > 0 ? (
                     <motion.div
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                     >
-                        {filteredProducts.map((product) => (
+                        {products.map((product) => (
                             <motion.div
                                 key={product.id}
                                 variants={itemVariants}
@@ -105,24 +157,26 @@ const SearchResults: React.FC = () => {
                                 {/* Product Image */}
                                 <div className="relative h-56 overflow-hidden bg-gray-100">
                                     <img
-                                        src={product.image}
+                                        src={product.imageUrl}
                                         alt={product.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                     />
-                                    {/* Category Badge */}
-                                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700">
-                                        {product.category}
-                                    </div>
+                                    {/* Category Badge - Optional, shown if available */}
+                                    {product.category && (
+                                        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700">
+                                            {product.category}
+                                        </div>
+                                    )}
                                     {/* Quick Actions */}
                                     <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleAddToWishlist(product);
+                                                handleToggleFavorite(product);
                                             }}
                                             className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition"
                                         >
-                                            <Heart className="w-4 h-4 text-red-500" />
+                                            <Heart className={`w-4 h-4 ${product.isFavorite ? "text-red-500 fill-current" : "text-gray-400"}`} />
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -185,7 +239,7 @@ const SearchResults: React.FC = () => {
                             Back to Home
                         </button>
                     </motion.div>
-                )}
+                ))}
             </div>
         </div>
     );

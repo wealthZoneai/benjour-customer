@@ -1,20 +1,27 @@
 import React, { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   X,
   UploadCloud,
-  ArrowRight,
   Trash2,
   Star,
   DollarSign,
   Percent,
   Box,
+  FileText,
+  Package,
+  Bookmark,
+  Scale,
 } from "lucide-react";
+import * as XLSX from "xlsx";
+import InputGroup from "./InputGroup";
+import InputMini from "./InputMini";
 
 interface CreateItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (payload: any) => void;
+  onBulkSubmit: (payload: any) => void;
   initialData?: any;
 }
 
@@ -29,45 +36,55 @@ const defaultData = {
   file: null as File | null,
   preview: "",
   imageUrl: "",
+  quantity: "",
 };
 
 export default function CreateItemModal({
   isOpen,
   onClose,
   onSubmit,
+  onBulkSubmit,
   initialData,
 }: CreateItemModalProps) {
   const [form, setForm] = useState<typeof defaultData>(defaultData);
   const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
+  // Bulk Upload States
+  const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
+  const [excelFileName, setExcelFileName] = useState("");
+  const [excelPreview, setExcelPreview] = useState<any[]>([]);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [zipFile, setZipFile] = useState<File | null>(null);
+
+
   useEffect(() => {
-    console.log("CreateItemModal - isOpen:", isOpen);
-    console.log("CreateItemModal - initialData:", initialData);
     if (isOpen) {
       setForm(initialData ? { ...defaultData, ...initialData } : defaultData);
+      // Reset bulk preview/name when opening or switching tabs
+      setExcelPreview([]);
+      setExcelFileName("");
     }
   }, [isOpen, initialData]);
 
+  // Normal Inputs
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+    const { name, value, type } = e.target;
+
     if (type === "checkbox") {
-      setForm((p) => ({
-        ...p,
-        [name]: (e.target as HTMLInputElement).checked,
-      }));
+      setForm((p) => ({ ...p, [name]: (e.target as HTMLInputElement).checked }));
       return;
     }
+
     setForm((p) => ({ ...p, [name]: value }));
   };
 
+  // Image Upload
   const handleFile = (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) return alert("Please upload an image");
+    if (!file.type.startsWith("image/")) return alert("Please upload an image!");
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -79,6 +96,7 @@ export default function CreateItemModal({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+
     if (e.dataTransfer.files?.[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -86,267 +104,462 @@ export default function CreateItemModal({
 
   const removeImage = (e: React.MouseEvent) => {
     e.stopPropagation();
+
     setForm((p) => ({ ...p, file: null, preview: "", imageUrl: "" }));
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  // Excel Upload
+  const handleExcelUpload = (file?: File) => {
+    if (!file) return;
+    setExcelFile(file);
+    setExcelFileName(file.name);
 
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const workbook = XLSX.read(e.target?.result, { type: "binary" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+      setExcelPreview(rows);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+
+
+  // Submit Bulk
+  const handleBulkSubmit = () => {
+    if (!excelFile) {
+      alert("Please upload an Excel file!");
+      return;
+    }
+
+    if (!zipFile) {
+      alert("Please upload a ZIP file!");
+      return;
+    }
+
+    onBulkSubmit({
+      excelFile,
+      zipFile,
+    });
+
+    onClose();
+  };
+
+  // Submit Single Item
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return alert("Name is required");
     if (!form.price || Number(form.price) <= 0)
       return alert("Price must be greater than 0");
+
     onSubmit(form);
     onClose();
   };
 
-  console.log("CreateItemModal RENDERING - isOpen:", isOpen);
-
-  if (!isOpen) {
-    console.log("Modal is NOT open, returning null");
-    return null;
-  }
-
-  console.log("Modal IS open, rendering modal content");
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/50">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80">
       {/* Backdrop */}
       <motion.div
+        onClick={onClose}
+        className="absolute inset-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm transition-all"
       />
 
-      {/* Modal Container */}
+      {/* Modal */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: -20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-        className="relative w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-[2rem] shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh]"
+        transition={{ duration: 0.3 }}
+        className="relative w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-zinc-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl sticky top-0 z-10">
-          <div>
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-              {initialData ? "Update Product" : "New Product"}
-            </h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Fill in the details to manage your inventory.
-            </p>
-          </div>
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800">
+          <h2 className="text-xl font-bold text-zinc-800 dark:text-white">
+            {activeTab === "single"
+              ? initialData
+                ? "Update Product Details"
+                : "Create New Product Item"
+              : "Import Multiple Items"}
+          </h2>
+
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors"
+            className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-8">
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Body with Tabs INSIDE */}
+        <div className="p-6 max-h-[75vh] overflow-y-auto">
+          {/* Internal Tab Switcher */}
+          <div className="flex justify-center mb-6 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg max-w-md mx-auto">
+            <button
+              onClick={() => setActiveTab("single")}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${activeTab === "single"
+                ? "bg-white dark:bg-indigo-600 text-indigo-700 dark:text-white shadow"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                }`}
+            >
+              <Bookmark size={16} className="inline mr-2 align-text-bottom" />
+              Single Entry
+            </button>
 
-            {/* Left Column: Image Upload (Span 5) */}
-            <div className="lg:col-span-5 flex flex-col gap-6">
-              <div className="group relative w-full aspect-[4/5] rounded-3xl overflow-hidden border-2 border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 transition-all hover:border-zinc-400 dark:hover:border-zinc-600">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFile(e.target.files?.[0])}
-                  className="hidden"
-                />
+            <button
+              onClick={() => setActiveTab("bulk")}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${activeTab === "bulk"
+                ? "bg-white dark:bg-indigo-600 text-indigo-700 dark:text-white shadow"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                }`}
+            >
+              <FileText size={16} className="inline mr-2 align-text-bottom" />
+              Bulk Upload
+            </button>
+          </div>
 
+          {/* CONTENT AREA */}
+
+          {/* SINGLE ITEM MODE */}
+          {activeTab === "single" && (
+            <form
+              onSubmit={handleSubmit}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+              {/* LEFT SIDE: IMAGE UPLOAD & FAVORITE */}
+              <div className="lg:col-span-4 flex flex-col gap-6">
+                {/* IMAGE UPLOAD BOX */}
                 <div
-                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
-                  onClick={() => fileRef.current?.click()}
-                  className={`absolute inset-0 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${isDragging ? "bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-500" : ""
+                  className={`relative w-full aspect-[4/5] border-2 ${isDragging
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                    : "border-dashed border-zinc-300 dark:border-700"
+                    } rounded-lg overflow-hidden transition-all duration-200 bg-zinc-50 dark:bg-zinc-900/50`}
+                >
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFile(e.target.files?.[0])}
+                  />
+
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileRef.current?.click()}
+                    className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer p-4"
+                  >
+                    {form.preview || form.imageUrl ? (
+                      <>
+                        <img
+                          src={form.preview || form.imageUrl}
+                          alt="Product Preview"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="absolute top-3 right-3 bg-white/90 p-2 rounded-full shadow-lg z-10 text-red-600 hover:bg-white transition"
+                          title="Remove Image"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-center text-zinc-500 dark:text-zinc-400">
+                        <UploadCloud
+                          size={40}
+                          className="mx-auto text-indigo-600"
+                        />
+                        <p className="font-medium mt-3 text-zinc-700 dark:text-zinc-200">
+                          Click or Drop Image
+                        </p>
+                        <p className="text-xs mt-1">PNG, JPG, up to 5MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Favorite Toggle (Pill Switch) */}
+                <div
+                  onClick={() =>
+                    setForm((p) => ({ ...p, isFavorite: !p.isFavorite }))
+                  }
+                  className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition-all duration-200 ${form.isFavorite
+                    ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400"
+                    : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                     }`}
                 >
-                  {form.preview || form.imageUrl ? (
-                    <>
-                      <img
-                        src={form.preview || form.imageUrl}
-                        alt="Preview"
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-4 right-4 p-2 bg-white/90 text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-white"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="text-center p-6">
-                      <div className="w-16 h-16 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400">
-                        <UploadCloud size={32} />
-                      </div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                        Click or drag image
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-2 max-w-[200px] mx-auto">
-                        Supports JPG, PNG, WEBP. <br /> Max size 5MB.
-                      </p>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <Star
+                      size={18}
+                      fill={form.isFavorite ? "currentColor" : "none"}
+                      className={
+                        form.isFavorite
+                          ? "text-yellow-500"
+                          : "text-zinc-400 dark:text-zinc-500"
+                      }
+                    />
+                    <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-100">
+                      Mark as Highlight
+                    </span>
+                  </div>
+
+                  {/* Custom Toggle Switch */}
+                  <div
+                    className={`w-10 h-5 rounded-full relative p-0.5 transition-colors duration-300 ${form.isFavorite
+                      ? "bg-yellow-500"
+                      : "bg-zinc-300 dark:bg-zinc-600"
+                      }`}
+                  >
+                    <motion.div
+                      className="w-4 h-4 bg-white rounded-full shadow-sm"
+                      layout
+                      transition={{ type: "spring", stiffness: 700, damping: 30 }}
+                      style={{
+                        x: form.isFavorite ? "100%" : "0%",
+                        marginLeft: form.isFavorite ? "-0.25rem" : "0.05rem",
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Favorite Toggle as a Card */}
-              <div
-                onClick={() => setForm(p => ({ ...p, isFavorite: !p.isFavorite }))}
-                className={`cursor-pointer flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${form.isFavorite
-                    ? "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800"
-                    : "bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700"
-                  }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl ${form.isFavorite ? "bg-amber-100 text-amber-600" : "bg-zinc-100 text-zinc-500"}`}>
-                    <Star size={20} fill={form.isFavorite ? "currentColor" : "none"} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Highlight Item</span>
-                    <span className="text-xs text-zinc-500">Mark as favorite/bestseller</span>
-                  </div>
-                </div>
-                <div className={`w-12 h-6 rounded-full relative transition-colors ${form.isFavorite ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}>
-                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200 ${form.isFavorite ? 'left-7' : 'left-1'}`} />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Inputs (Span 7) */}
-            <div className="lg:col-span-7 space-y-6">
-
-              {/* Name & Cat Group */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <InputGroup label="Product Name" icon={<Box size={16} />}>
+              {/* RIGHT SIDE: FORM INPUTS */}
+              <div className="lg:col-span-8 space-y-6">
+                {/* NAME */}
+                <InputGroup label="Product Name" icon={<Package size={16} />}>
                   <input
                     name="name"
                     value={form.name}
                     onChange={handleChange}
-                    placeholder="e.g. Carlsberg Elephant"
-                    className="w-full bg-transparent outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
+                    placeholder="e.g. Premium Cola 1L (Required)"
+                    required
+                    className="bg-transparent outline-none w-full text-zinc-900 dark:text-white font-medium"
                   />
                 </InputGroup>
-              </div>
 
-              {/* Pricing Group */}
-              <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Pricing & Rating</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1">
-                    <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Price</label>
-                    <div className="relative group bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all overflow-hidden">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
-                        <DollarSign size={14} />
-                      </div>
-                      <input
-                        type="number"
-                        name="price"
-                        value={form.price}
-                        onChange={handleChange}
-                        className="w-full pl-8 pr-3 py-2.5 bg-transparent outline-none text-sm font-semibold"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
+                {/* PRICE + DISCOUNT + RATING + QUANTITY */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <InputMini
+                    label="Price"
+                    name="price"
+                    type="number"
+                    icon={<DollarSign size={14} />}
+                    value={form.price}
+                    onChange={handleChange}
+                    placeholder="100.00"
+                    step="0.01"
+                  />
 
-                  <div className="col-span-1">
-                    <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Discount</label>
-                    <div className="relative group bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 focus-within:border-indigo-500 transition-all overflow-hidden">
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">
-                        <Percent size={14} />
-                      </div>
-                      <input
-                        type="number"
-                        name="discount"
-                        value={form.discount}
-                        onChange={handleChange}
-                        className="w-full pl-3 pr-8 py-2.5 bg-transparent outline-none text-sm font-semibold"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
+                  <InputMini
+                    label="Discount (%)"
+                    name="discount"
+                    type="number"
+                    icon={<Percent size={14} />}
+                    value={form.discount}
+                    onChange={handleChange}
+                    placeholder="10"
+                    step="1"
+                  />
 
-                  <div className="col-span-1">
-                    <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Rating</label>
-                    <div className="relative group bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 focus-within:border-indigo-500 transition-all overflow-hidden">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400">
-                        <Star size={14} fill="currentColor" />
-                      </div>
-                      <input
-                        type="number"
-                        step="0.1"
-                        max="5"
-                        name="rating"
-                        value={form.rating}
-                        onChange={handleChange}
-                        className="w-full pl-8 pr-3 py-2.5 bg-transparent outline-none text-sm font-semibold"
-                        placeholder="4.5"
-                      />
-                    </div>
-                  </div>
+                  <InputMini
+                    label="Rating"
+                    name="rating"
+                    type="number"
+                    icon={<Star size={14} />}
+                    value={form.rating}
+                    onChange={handleChange}
+                    placeholder="4.5"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                  />
+
+                  <InputMini
+                    label="Unit"
+                    name="quantity"
+                    icon={<Scale size={14} />}
+                    value={form.quantity}
+                    onChange={handleChange}
+                    placeholder="e.g. 1kg / 750ml"
+                  />
+                </div>
+
+                {/* DESCRIPTION */}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block text-zinc-700 dark:text-zinc-300">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Write a comprehensive description for the item..."
+                    className="w-full p-3 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  />
                 </div>
               </div>
+            </form>
+          )}
 
-              {/* Description */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Description</label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Write a catchy description..."
-                  className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all resize-none text-sm"
+          {/* BULK UPLOAD MODE */}
+          {activeTab === "bulk" && (
+            <div className="space-y-6">
+              {/* Upload Box */}
+              <div
+                className="border-2 border-dashed border-indigo-400 dark:border-indigo-600 rounded-xl p-8 text-center cursor-pointer bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors duration-200"
+                onClick={() => document.getElementById("excelInput")?.click()}
+              >
+                <input
+                  id="excelInput"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => handleExcelUpload(e.target.files?.[0])}
                 />
-              </div>
 
+                <UploadCloud
+                  size={50}
+                  className="mx-auto text-indigo-600 dark:text-indigo-400"
+                />
+                <p className="font-bold text-lg mt-3 text-zinc-800 dark:text-white">
+                  Drop your Excel file here
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Accepted: .xlsx, .xls • Required columns: **Name, Price, Quantity, Category**
+                </p>
+
+                {excelFileName && (
+                  <div className="flex items-center justify-center mt-3 p-2 bg-white dark:bg-zinc-800 border border-green-300 rounded-lg max-w-sm mx-auto shadow-sm">
+                    <FileText size={16} className="text-green-600 mr-2" />
+                    <p className="text-green-600 dark:text-green-400 font-medium text-sm truncate">
+                      {excelFileName}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {/* ZIP Upload Box */}
+              <div
+                className="border-2 border-dashed border-purple-400 rounded-xl p-6 text-center cursor-pointer bg-purple-50 hover:bg-purple-100"
+                onClick={() => document.getElementById("zipInput")?.click()}
+              >
+                <input
+                  id="zipInput"
+                  type="file"
+                  accept=".zip"
+                  className="hidden"
+                  onChange={(e) => setZipFile(e.target.files?.[0] || null)}
+                />
+
+                <UploadCloud size={40} className="mx-auto text-purple-600" />
+                <p className="font-bold mt-2">Upload ZIP of Images</p>
+
+                {zipFile && (
+                  <p className="mt-2 text-purple-600 font-medium">{zipFile.name}</p>
+                )}
+              </div>
+              {/* Preview */}
+              {excelPreview.length > 0 && (
+                <div className="mt-4 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-md">
+                  <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-t-lg">
+                    <h3 className="font-bold text-base text-zinc-800 dark:text-white">
+                      Preview Items ({excelPreview.length})
+                    </h3>
+                  </div>
+
+                  <div className="overflow-auto max-h-60">
+                    <table className="w-full text-sm">
+                      <thead className="bg-zinc-100 dark:bg-zinc-800 sticky top-0 border-b dark:border-zinc-700">
+                        <tr>
+                          <th className="p-3 text-left font-semibold text-zinc-600 dark:text-zinc-300">
+                            #
+                          </th>
+                          <th className="p-3 text-left font-semibold text-zinc-600 dark:text-zinc-300">
+                            Name
+                          </th>
+                          <th className="p-3 text-left font-semibold text-zinc-600 dark:text-zinc-300">
+                            Price
+                          </th>
+                          <th className="p-3 text-left font-semibold text-zinc-600 dark:text-zinc-300">
+                            Quantity
+                          </th>
+                          <th className="p-3 text-left font-semibold text-zinc-600 dark:text-zinc-300">
+                            Category
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {excelPreview.map((row, i) => (
+                          <tr
+                            key={i}
+                            className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                          >
+                            <td className="p-3 text-zinc-500 dark:text-zinc-400 w-10">
+                              {i + 1}
+                            </td>
+                            <td className="p-3 font-medium text-zinc-900 dark:text-zinc-100">
+                              {row.Name || "-"}
+                            </td>
+                            <td className="p-3 text-zinc-700 dark:text-zinc-300">
+                              ${row.Price || 0}
+                            </td>
+                            <td className="p-3 text-zinc-700 dark:text-zinc-300">
+                              {row.Quantity || "-"}
+                            </td>
+                            <td className="p-3 text-zinc-700 dark:text-zinc-300">
+                              {row.Category || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
-          </form>
+          )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex justify-end gap-3 z-10">
+        {/* FOOTER - Action Buttons */}
+        <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-end gap-3 bg-zinc-50 dark:bg-zinc-800">
           <button
-            type="button"
             onClick={onClose}
-            className="px-6 py-3 rounded-xl text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors"
+            className="px-5 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-600 transition font-medium text-sm"
           >
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            className="group relative px-8 py-3 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold shadow-lg shadow-zinc-900/20 dark:shadow-white/20 hover:shadow-xl hover:scale-[1.02] transition-all active:scale-95 flex items-center gap-2"
-          >
-            <span>{initialData ? "Save Changes" : "Create Item"}</span>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+
+          {activeTab === "single" ? (
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-md shadow-indigo-500/30 text-sm"
+            >
+              {initialData ? "Save Changes" : "Create Item"}
+              <Box size={16} className="inline ml-2 align-text-bottom" />
+            </button>
+          ) : (
+            <button
+              onClick={handleBulkSubmit}
+              className="px-6 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition shadow-md shadow-green-500/30 disabled:opacity-50 text-sm"
+              disabled={excelPreview.length === 0}
+            >
+              Upload All Items ({excelPreview.length})
+            </button>
+          )}
         </div>
       </motion.div>
-    </div>
-  );
-}
-
-// Utility Component for consistent input styling
-function InputGroup({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wide ml-1">{label}</label>
-      <div className="flex items-center gap-3 px-4 py-3.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus-within:ring-2 focus-within:ring-zinc-900 dark:focus-within:ring-white focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-300">
-        <div className="text-zinc-400 dark:text-zinc-500">{icon}</div>
-        {children}
-      </div>
     </div>
   );
 }

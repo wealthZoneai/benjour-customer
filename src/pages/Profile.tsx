@@ -1,15 +1,73 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
-import ImageCropperModal from "../components/ImageCropperModal"; // you’ll create this file next
+import ImageCropperModal from "../components/ImageCropperModal";
+import { useSelector } from "react-redux";
+import type { RootState } from "../Redux/store";
+import { getUserProfile, createUserProfile, updateUserProfile } from "../services/apiHelpers";
+import toast from "react-hot-toast";
 
 const Profile: React.FC = () => {
+  const userId = useSelector((state: RootState) => state.user.userId);
   const [profileImage, setProfileImage] = useState("https://via.placeholder.com/120");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isNewProfile, setIsNewProfile] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    email: "",
+    location: ""
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!userId) return;
+      setLoading(true);
+      try {
+        const response = await getUserProfile(userId);
+        if (response.data) {
+          const { firstName, lastName, phoneNumber, email, location, profileImg } = response.data;
+          setFormData({
+            firstName: firstName || "",
+            lastName: lastName || "",
+            phoneNumber: phoneNumber || "",
+            email: email || "",
+            location: location || ""
+          });
+          if (profileImg) {
+            // Assuming profileImage in response is a URL. If it needs construction, adjust here.
+            setProfileImage(profileImg);
+          }
+          setIsNewProfile(false);
+        } else {
+          // No profile found, assume new mode
+          setIsNewProfile(true);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        // If 404, it might mean profile doesn't exist yet
+        setIsNewProfile(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [userId]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file); // Store file for upload
       const reader = new FileReader();
       reader.onload = () => {
         setSelectedImage(reader.result as string);
@@ -18,6 +76,60 @@ const Profile: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleCropSave = (img: string) => {
+    setProfileImage(img);
+    // NOTE: The cropper returns a base64 string (optimistically displayed).
+    // We still use 'selectedFile' for the upload unless we convert the cropped string back to a file.
+    // For simplicity in this step, we upload the ORIGINAL selected file, or we implement base64 to blob conversion.
+    // Let's assume we proceed with the original file upload for backend or if cropper provides a file object, usage depends on that component.
+    // If the User wants the Cropped version sent to backend, we need to convert 'img' (base64) to a File object.
+
+    fetch(img)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
+        setSelectedFile(file);
+      });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (!userId) {
+        toast.error("User ID is missing. Please log in.");
+        return;
+      }
+
+      const dataPayload = {
+        ...formData,
+        file: selectedFile
+      };
+
+      if (isNewProfile) {
+        await createUserProfile(userId, dataPayload);
+        toast.success("Profile created successfully!");
+        setIsNewProfile(false);
+      } else {
+        await updateUserProfile(userId, dataPayload);
+        toast.success("Profile updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && !formData.firstName) { // Initial load only
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 py-16">
@@ -53,11 +165,14 @@ const Profile: React.FC = () => {
         {/* Profile Form */}
         <div className="mt-20 px-10 pb-10 text-center">
           <h1 className="text-3xl font-semibold text-gray-800 mb-6">My Profile</h1>
-          <form className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-left">
+          <form className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-left" onSubmit={handleSubmit}>
             <div>
               <label className="text-gray-600 text-sm font-medium">First Name</label>
               <input
                 type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
                 placeholder="John"
                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
               />
@@ -66,6 +181,9 @@ const Profile: React.FC = () => {
               <label className="text-gray-600 text-sm font-medium">Last Name</label>
               <input
                 type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
                 placeholder="Doe"
                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
               />
@@ -74,6 +192,9 @@ const Profile: React.FC = () => {
               <label className="text-gray-600 text-sm font-medium">Phone Number</label>
               <input
                 type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
                 placeholder="+91 98765 43210"
                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
               />
@@ -82,6 +203,9 @@ const Profile: React.FC = () => {
               <label className="text-gray-600 text-sm font-medium">E-mail Address</label>
               <input
                 type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
                 placeholder="john.doe@example.com"
                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
               />
@@ -90,18 +214,24 @@ const Profile: React.FC = () => {
               <label className="text-gray-600 text-sm font-medium">Location</label>
               <input
                 type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
                 placeholder="New Delhi, India"
                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
               />
             </div>
-          </form>
 
-          <button
-            type="submit"
-            className="mt-8 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 text-white px-8 py-2 rounded-lg shadow-md hover:opacity-90 transition"
-          >
-            Save Changes
-          </button>
+            <div className="sm:col-span-2 flex justify-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-8 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 text-white px-8 py-2 rounded-lg shadow-md hover:opacity-90 transition disabled:opacity-50"
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -177,7 +307,7 @@ const Profile: React.FC = () => {
         <ImageCropperModal
           image={selectedImage}
           onClose={() => setShowCropper(false)}
-          onSave={(img) => setProfileImage(img)}
+          onSave={handleCropSave}
         />
       )}
     </div>

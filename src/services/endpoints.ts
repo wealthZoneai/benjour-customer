@@ -5,6 +5,12 @@ const endpoints = {
     verifyEmailOtp: "api/Alcohols/auth/verify/user",
 
     // Dynamic Categories (Main categories like Groceries, Alcohol, Drinks)
+    getCurrentOrder: 'api/profile/currentorder/',
+    getAllOrders: 'api/profile/allorders/',
+    getProfile: 'api/profile/getProfile?userId=',
+    createProfile: 'api/profile/createProfile?userId=',
+    updateProfile: 'api/profile/updateProfile?userId=',
+
     getMainCategories: 'api/categories/getAllCategories',
     createMainCategory: 'api/categories/createCategory',
     updateMainCategory: 'api/categories/updateCategory?id=',
@@ -16,12 +22,14 @@ const endpoints = {
     createSubcategory: 'api/subcategories/createSubCategory?categoryId=',
     updateSubcategory: 'api/subcategories/updateSubcategory?subcategoryId=',
     deleteSubcategory: 'api/subcategories/deleteCategory?id=',
-
+    
     // Items under subcategories
     getSubcategoryItems: 'api/items/getItemsBySubCategoryId?subCategoryId=',
     createItem: 'api/items/createItem?subCategoryId=',
     updateItem: 'api/items/updateItem?ItemId=',
     deleteItem: 'api/items/deleteItem?id=',
+    searchItems: 'api/items/searchItems?name=',
+    uploadBulkItems: 'api/items/upload-excel-zip',
 
     // addToCart
     addToCart: 'Cart/addToCart',

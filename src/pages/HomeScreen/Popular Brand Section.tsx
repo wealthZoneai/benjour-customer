@@ -47,7 +47,7 @@ const BrandSection: React.FC = () => {
   ];
 
   return (
-    <section className="w-full bg-gradient-to-br from-gray-50 to-white py-16 px-4 md:px-8 relative overflow-hidden">
+    <section className="w-full bg-gradient-to-br from-gray-50 to-white py-2 px-4 md:px-8 relative overflow-hidden">
       {/* Background Decoration */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-100/30 to-pink-100/30 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100/30 to-cyan-100/30 rounded-full blur-3xl -z-10" />
