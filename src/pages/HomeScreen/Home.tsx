@@ -5,7 +5,6 @@ import BrandSection from "./Popular Brand Section";
 import ComboScreen from "./Combo";
 import TopRating from "./TopRating";
 import CustomerReviews from "./CustomerReviews";
-import Overview from "./Overview";
 import CategoriesScreen from "./HomeCategories/CategoriesScreen";
 
 const Home: React.FC = () => {

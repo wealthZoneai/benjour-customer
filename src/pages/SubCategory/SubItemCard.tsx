@@ -16,7 +16,11 @@ interface GroceryProductCardProps {
   discount?: number;
   rating?: number;
   category: string;
-  isFavorite?: boolean;
+  minValue?: number;
+  maxValue?: number;
+  stepValue?: number;
+  unitType?: string;
+
   onViewDetails?: () => void;
 }
 
@@ -28,16 +32,27 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
   price,
   discount = 5,
   rating = 4,
-  isFavorite,
+  minValue = 1,
+  maxValue = 10,
+  stepValue = 1,
+  unitType = "PIECE",
   onViewDetails,
 }) => {
-  const [quantity, setQuantity] = React.useState(1);
+  // Quantity starts at minValue
+const min = minValue ?? 1;
+const max = maxValue ?? 50;
+const step = stepValue ?? 1;
+const unit = unitType || "";  // empty unit when not provided
+
+const [quantity, setQuantity] = React.useState(min);
   const [isAdding, setIsAdding] = React.useState(false);
   const dispatch = useDispatch();
 
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
   const userId = useSelector((state: RootState) => state.user.userId);
   const isWishlisted = wishlist.some((item) => item.id === id);
+
+
 
   const toggleWishlist = async () => {
     if (!userId) {
@@ -57,20 +72,16 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
       const response = await setFavoriteItem(id, newFavoriteStatus);
 
       if (!response || !response.data) {
-        if (isWishlisted) {
-          dispatch(addToWishlist({ id, name, price, image, category }));
-        } else {
-          dispatch(removeFromWishlist(id));
-        }
+        if (isWishlisted) dispatch(addToWishlist({ id, name, price, image, category }));
+        else dispatch(removeFromWishlist(id));
+
         toast.error("Failed to update wishlist");
         return;
       }
 
-      if (newFavoriteStatus) {
-        toast.success("Added to wishlist ❤️");
-      } else {
-        toast("Removed from wishlist 💔");
-      }
+      newFavoriteStatus
+        ? toast.success("Added to wishlist ❤️")
+        : toast("Removed from wishlist 💔");
     } catch (error) {
       console.error("Wishlist API Error:", error);
 
@@ -90,8 +101,8 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
       return;
     }
 
-    if (quantity < 1) {
-      toast.error("Please select at least 1 item");
+    if (quantity < minValue) {
+      toast.error(`Minimum quantity is ${minValue} ${unit}`);
       return;
     }
 
@@ -105,9 +116,9 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
         return;
       }
 
-      dispatch(addToCart({ id, name, image, price, quantity }));
+      dispatch(addToCart({ id, name, image, price, quantity, discount,minValue,maxValue,stepValue,unitType }));
       toast.success(`${name} added to cart 🛒`);
-      setQuantity(1);
+      setQuantity(minValue);
     } catch (error) {
       console.error("Cart API Error:", error);
       toast.error("Something went wrong while adding item");
@@ -118,12 +129,20 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
 
   const originalPrice = (price / (1 - discount / 100)).toFixed(0);
 
+  const unitLabel = unit 
+    .replace("LITRE", "L")
+    .replace("MILLILITER", "ml")
+    .replace("KILOGRAM", "kg")
+    .replace("GRAM", "g")
+    .replace("PIECE", "pc")
+    .replace("PACKET", "pkt");
+
   return (
     <motion.div
       whileHover={{ y: -6 }}
       className="relative group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
     >
-      {/* Gradient Overlay on Hover */}
+      {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10" />
 
       {/* Discount Badge */}
@@ -141,9 +160,7 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
       >
         <Heart
           size={18}
-          className={`${isWishlisted
-              ? "fill-red-500 text-red-500"
-              : "text-gray-400 hover:text-red-400"
+          className={`${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-400"
             } transition-colors`}
         />
       </button>
@@ -159,12 +176,6 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
 
       {/* Content */}
       <div className="p-4">
-        {/* Category */}
-        {/* <div className="mb-2">
-          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-            {category}
-          </span>
-        </div> */}
 
         {/* Product Name */}
         <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-2 min-h-[2.5rem]">
@@ -177,45 +188,69 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
             <Star
               key={i}
               size={14}
-              className={`${i < rating
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "fill-gray-200 text-gray-200"
-                }`}
+              className={`${i < rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`}
             />
           ))}
           <span className="text-xs text-gray-500 ml-1">({rating}.0)</span>
         </div>
 
-        {/* Price */}
-        <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-xl font-bold text-emerald-600">₹{price}</span>
+        {/* Dynamic Price */}
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="text-xl font-bold text-emerald-600">
+            ₹{(price * quantity).toFixed(2)}
+          </span>
+
           {discount > 0 && (
             <span className="text-sm text-gray-400 line-through">
-              ₹{originalPrice}
+              ₹{(Number(originalPrice) * quantity).toFixed(2)}
             </span>
           )}
         </div>
 
-        {/* Quantity Selector */}
-        <div className="flex items-center gap-2 mb-3">
+        {/* DYNAMIC QUANTITY SELECTOR */}
+        <div className="flex items-center justify-between mb-4 bg-emerald-50 py-2 px-3 rounded-xl">
+
+          {/* Minus */}
           <button
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-8 h-8 rounded-full border-2 border-emerald-600 text-emerald-600 flex items-center justify-center hover:bg-emerald-50 transition-colors"
+            onClick={() =>
+              setQuantity(prev =>
+                Math.max(minValue, prev - step)
+              )
+            }
+            disabled={quantity <= minValue}
+            className={`w-8 h-8 rounded-full flex items-center justify-center
+              ${quantity <= minValue
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-100"
+              }`}
           >
             <Minus size={14} />
           </button>
-          <span className="flex-1 text-center font-semibold text-gray-800">
-            {quantity}
+
+          {/* Quantity Display */}
+          <span className="text-md font-semibold text-gray-800">
+            {quantity} {unitLabel}
           </span>
+
+          {/* Plus */}
           <button
-            onClick={() => setQuantity(quantity + 1)}
-            className="w-8 h-8 rounded-full border-2 border-emerald-600 text-emerald-600 flex items-center justify-center hover:bg-emerald-50 transition-colors"
+            onClick={() =>
+              setQuantity(prev =>
+                Math.min(max, prev + step)
+              )
+            }
+            disabled={quantity >= max}
+            className={`w-8 h-8 rounded-full flex items-center justify-center
+              ${quantity >= max
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-100"
+              }`}
           >
             <Plus size={14} />
           </button>
         </div>
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart */}
         <button
           onClick={handleAddToCart}
           disabled={isAdding}
@@ -238,7 +273,6 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
           )}
         </button>
 
-        {/* View Details */}
         {onViewDetails && (
           <button
             onClick={onViewDetails}

@@ -14,6 +14,9 @@ import SearchResults from "../pages/SearchResults";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
 import ProcessingPayment from "../pages/PaymentProcessing";
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AnalyticsDashboard from "../pages/Admin/Analytics/AnalyticsDashboard";
+import Coupons from "../pages/Admin/Marketing/Coupons";
 
 
 const AppRouters = () => {
@@ -38,6 +41,10 @@ const AppRouters = () => {
           <Route path="/processing-payment" element={<ProcessingPayment />} />
           <Route path="/payment-failure" element={<PaymentFailure />} />
 
+          {/* Admin Routes */}
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/admin/marketing" element={<Coupons />} />
         </Route>
 
         {/* Routes without Header & Footer */}

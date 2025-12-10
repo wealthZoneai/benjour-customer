@@ -1,10 +1,28 @@
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShoppingCart, X, Plus, Minus, Trash2, ShoppingBag, Tag, Truck, AlertCircle } from "lucide-react";
+import {
+    ShoppingCart,
+    X,
+    Plus,
+    Minus,
+    Trash2,
+    ShoppingBag,
+    Tag,
+    Truck,
+    AlertCircle
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { decreaseQuantity, increaseQuantity, removeFromCart } from "../Redux/cartSlice";
+import {
+    decreaseQuantity,
+    increaseQuantity,
+    removeFromCart
+} from "../Redux/cartSlice";
 import toast from "react-hot-toast";
-import { deleteFromCart, createCheckoutSession, updateCartQuantity } from "../services/apiHelpers";
+import {
+    deleteFromCart,
+    createCheckoutSession,
+    updateCartQuantity
+} from "../services/apiHelpers";
 import type { RootState } from "../Redux/store";
 
 interface CartItem {
@@ -13,6 +31,11 @@ interface CartItem {
     price: number;
     image: string;
     quantity: number;
+    unitType: string | null;
+    discount: number | null;
+    minValue: number | null;
+    maxValue: number | null;
+    stepValue: number | null;
 }
 
 interface ShowCartProps {
@@ -21,6 +44,7 @@ interface ShowCartProps {
     cart: CartItem[];
     cartCount: number;
     totalPrice: number;
+    
 }
 
 const ShowCart: React.FC<ShowCartProps> = ({
@@ -28,15 +52,20 @@ const ShowCart: React.FC<ShowCartProps> = ({
     setShowCart,
     cart,
     cartCount,
-    totalPrice,
+    totalPrice
 }) => {
     const dispatch = useDispatch();
     const userId = useSelector((state: RootState) => state.user.userId);
-    const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    console.log(cart);
+    // -------------------------------------------------------------
+    // REMOVE ITEM FROM CART
+    // -------------------------------------------------------------
     const handleRemoveFromCart = async (id: number) => {
         try {
             const response = await deleteFromCart(userId, id);
+
             if (response.status === 200) {
                 dispatch(removeFromCart(id));
                 toast.success("Product removed from cart");
@@ -46,44 +75,62 @@ const ShowCart: React.FC<ShowCartProps> = ({
         }
     };
 
+    // -------------------------------------------------------------
+    // INCREASE QUANTITY (Dynamic)
+    // -------------------------------------------------------------
     const handleIncreaseQuantity = async (item: CartItem) => {
-        const newQuantity = item.quantity + 1;
-        dispatch(increaseQuantity(item.id));
+        const min = item.minValue ?? 1;
+        const max = item.maxValue ?? 50;
+        const step = item.stepValue ?? 1;
+
+        const newQuantity = Math.min(max, item.quantity + step);
+
+        dispatch(increaseQuantity({ id: item.id, amount: step }));
 
         try {
             await updateCartQuantity(userId, item.id, newQuantity);
         } catch (error) {
-            dispatch(decreaseQuantity(item.id));
+            dispatch(decreaseQuantity({ id: item.id, amount: step, min: min }));
             toast.error("Failed to update quantity");
         }
     };
 
+    // -------------------------------------------------------------
+    // DECREASE QUANTITY (Dynamic)
+    // -------------------------------------------------------------
     const handleDecreaseQuantity = async (item: CartItem) => {
-        if (item.quantity <= 1) {
+        const min = item.minValue ?? 1;
+        const step = item.stepValue ?? 1;
+
+        if (item.quantity <= min) {
             handleRemoveFromCart(item.id);
             return;
         }
 
-        const newQuantity = item.quantity - 1;
-        dispatch(decreaseQuantity(item.id));
+        const newQuantity = Math.max(min, item.quantity - step);
+
+        dispatch(decreaseQuantity({ id: item.id, amount: step, min: min }));
 
         try {
             await updateCartQuantity(userId, item.id, newQuantity);
         } catch (error) {
-            dispatch(increaseQuantity(item.id));
+            dispatch(increaseQuantity({ id: item.id, amount: step }));
             toast.error("Failed to update quantity");
         }
     };
 
+    // -------------------------------------------------------------
+    // CHECKOUT
+    // -------------------------------------------------------------
     const handleCheckout = async () => {
         if (cart.length === 0) {
             toast.error("Your cart is empty");
             return;
         }
 
-        const MINIMUM_ORDER_AMOUNT = 50;
-        if (totalPrice < MINIMUM_ORDER_AMOUNT) {
-            toast.error(`Minimum order amount is ₹${MINIMUM_ORDER_AMOUNT}. Please add more items.`);
+        const MIN_ORDER = 50;
+        if (totalPrice < MIN_ORDER) {
+            toast.error(`Minimum order amount is ₹${MIN_ORDER}. Please add more items.`);
             return;
         }
 
@@ -99,26 +146,29 @@ const ShowCart: React.FC<ShowCartProps> = ({
             if (response.data.checkoutUrl) {
                 window.location.href = response.data.checkoutUrl;
             } else {
-                toast.error("Failed to create checkout session");
+                toast.error("Checkout session failed");
             }
         } catch (error) {
-            console.error("Checkout error:", error);
             toast.error("Failed to proceed to checkout");
         } finally {
             setIsCheckingOut(false);
         }
     };
 
+    // SAVINGS CALCULATION
     const savings = cart.reduce((total, item) => {
-        const originalPrice = item.price * 1.2; // Assuming 20% discount
-        return total + ((originalPrice - item.price) * item.quantity);
+        const originalPrice = item.price * 1.2;
+        return total + (originalPrice - item.price) * item.quantity;
     }, 0);
 
+    // -------------------------------------------------------------
+    // UI RENDER
+    // -------------------------------------------------------------
     return (
         <AnimatePresence>
             {showCart && (
                 <>
-                    {/* Backdrop */}
+                    {/* BACKDROP */}
                     <motion.div
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
                         initial={{ opacity: 0 }}
@@ -127,7 +177,7 @@ const ShowCart: React.FC<ShowCartProps> = ({
                         onClick={() => setShowCart(false)}
                     />
 
-                    {/* Drawer */}
+                    {/* DRAWER */}
                     <motion.div
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
@@ -135,7 +185,7 @@ const ShowCart: React.FC<ShowCartProps> = ({
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         className="fixed right-0 top-0 h-full w-full sm:w-[480px] md:w-[520px] bg-white shadow-2xl z-50 flex flex-col"
                     >
-                        {/* Header */}
+                        {/* HEADER */}
                         <div className="relative bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -158,7 +208,7 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                 </button>
                             </div>
 
-                            {/* Savings Badge */}
+                            {/* SAVE MONEY BANNER */}
                             {savings > 0 && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -10 }}
@@ -167,15 +217,16 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                 >
                                     <Tag size={16} className="text-yellow-300" />
                                     <span className="text-white text-sm font-medium">
-                                        You're saving ₹{savings.toFixed(2)} on this order!
+                                        You're saving ₹{savings.toFixed(2)}!
                                     </span>
                                 </motion.div>
                             )}
                         </div>
 
-                        {/* Cart Content */}
+                        {/* CART CONTENT */}
                         <div className="flex-1 overflow-y-auto bg-gray-50">
                             {cart.length === 0 ? (
+                                // EMPTY CART UI
                                 <div className="flex flex-col items-center justify-center h-full px-6 text-center">
                                     <motion.div
                                         animate={{ scale: [1, 1.05, 1] }}
@@ -184,8 +235,13 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                     >
                                         <ShoppingCart size={64} className="text-gray-300" />
                                     </motion.div>
-                                    <h3 className="text-xl font-bold text-gray-800 mb-2">Your Cart is Empty</h3>
-                                    <p className="text-gray-500 mb-6">Add items to get started!</p>
+
+                                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                        Your Cart is Empty
+                                    </h3>
+                                    <p className="text-gray-500 mb-6">
+                                        Add items to get started!
+                                    </p>
                                     <button
                                         onClick={() => setShowCart(false)}
                                         className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
@@ -195,96 +251,127 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                 </div>
                             ) : (
                                 <div className="p-4 space-y-3">
-                                    {/* Cart Items */}
-                                    {cart.map((item, index) => (
-                                        <motion.div
-                                            key={item.id}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={{ delay: index * 0.05 }}
-                                            className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
-                                        >
-                                            <div className="flex gap-4">
-                                                {/* Image */}
-                                                <div className="relative flex-shrink-0">
-                                                    <img
-                                                        src={item.image}
-                                                        alt={item.name}
-                                                        className="w-20 h-20 object-cover rounded-xl"
-                                                    />
-                                                    <button
-                                                        onClick={() => handleRemoveFromCart(item.id)}
-                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
+                                    {/* CART ITEMS */}
+                                    {cart.map((item, index) => {
+                                        // Dynamic values with fallback
+                                        const min = item.minValue ?? 1;
+                                        const max = item.maxValue ?? 50;
 
-                                                {/* Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="font-semibold text-gray-800 mb-1 line-clamp-2">
-                                                        {item.name}
-                                                    </h4>
+                                        const unit =
+                                            item.unitType ||
+                                            ""; // DIET FRUITS → maybe empty
 
-                                                    <div className="flex items-baseline gap-2 mb-3">
-                                                        <span className="text-lg font-bold text-emerald-600">
-                                                            ₹{item.price.toFixed(2)}
-                                                        </span>
-                                                        <span className="text-sm text-gray-400 line-through">
-                                                            ₹{(item.price * 1.2).toFixed(2)}
-                                                        </span>
+                                        const unitLabel = unit
+                                            .replace("LITRE", "L")
+                                            .replace("MILLILITER", "ml")
+                                            .replace("KILOGRAM", "kg")
+                                            .replace("GRAM", "g")
+                                            .replace("PIECE", "pc")
+                                            .replace("PACKET", "pkt");
+
+                                        return (
+                                            <motion.div
+                                                key={item.id}
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -20 }}
+                                                transition={{ delay: index * 0.05 }}
+                                                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                                            >
+                                                <div className="flex gap-4">
+                                                    {/* IMAGE */}
+                                                    <div className="relative flex-shrink-0">
+                                                        <img
+                                                            src={item.image}
+                                                            alt={item.name}
+                                                            className="w-20 h-20 object-cover rounded-xl"
+                                                        />
+                                                        <button
+                                                            onClick={() =>
+                                                                handleRemoveFromCart(item.id)
+                                                            }
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
                                                     </div>
 
-                                                    {/* Quantity Controls */}
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
-                                                            <button
-                                                                onClick={() => handleDecreaseQuantity(item)}
-                                                                className="w-8 h-8 rounded-lg bg-white text-gray-600 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm"
-                                                            >
-                                                                {item.quantity === 1 ? (
-                                                                    <Trash2 size={14} />
-                                                                ) : (
-                                                                    <Minus size={14} />
-                                                                )}
-                                                            </button>
+                                                    {/* ITEM DETAILS */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-semibold text-gray-800 mb-1 line-clamp-2">
+                                                            {item.name}
+                                                        </h4>
 
-                                                            <span className="w-8 text-center font-semibold text-gray-800">
-                                                                {item.quantity}
+                                                        {/* PRICE */}
+                                                        <div className="flex items-baseline gap-2 mb-2">
+                                                            <span className="text-lg font-bold text-emerald-600">
+                                                                ₹
+                                                                {(
+                                                                    item.price *
+                                                                    item.quantity
+                                                                ).toFixed(2)}
                                                             </span>
-
-                                                            <button
-                                                                onClick={() => handleIncreaseQuantity(item)}
-                                                                className="w-8 h-8 rounded-lg bg-white text-gray-600 hover:text-emerald-600 flex items-center justify-center transition-colors shadow-sm"
-                                                            >
-                                                                <Plus size={14} />
-                                                            </button>
                                                         </div>
 
-                                                        <span className="text-lg font-bold text-gray-800">
-                                                            ₹{(item.price * item.quantity).toFixed(2)}
-                                                        </span>
+                                                        {/* QUANTITY CONTROLS */}
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
+                                                                {/* DECREASE */}
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleDecreaseQuantity(item)
+                                                                    }
+                                                                    className="w-8 h-8 rounded-lg bg-white text-gray-600 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm"
+                                                                >
+                                                                    {item.quantity <= min ? (
+                                                                        <Trash2 size={14} />
+                                                                    ) : (
+                                                                        <Minus size={14} />
+                                                                    )}
+                                                                </button>
+
+                                                                {/* DISPLAY */}
+                                                                <span className="w-16 text-center font-semibold text-gray-800">
+                                                                    {item.quantity} {unitLabel}
+                                                                </span>
+
+                                                                {/* INCREASE */}
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleIncreaseQuantity(item)
+                                                                    }
+                                                                    disabled={
+                                                                        item.quantity >= max
+                                                                    }
+                                                                    className="w-8 h-8 rounded-lg bg-white text-gray-600 hover:text-emerald-600 flex items-center justify-center transition-colors shadow-sm disabled:opacity-40"
+                                                                >
+                                                                    <Plus size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
 
-                        {/* Footer - Order Summary */}
+                        {/* FOOTER SECTION */}
                         {cart.length > 0 && (
                             <div className="border-t border-gray-200 bg-white p-6">
-                                {/* Minimum Order Warning */}
+                                {/* MINIMUM ORDER WARNING */}
                                 {totalPrice < 50 && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         className="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4"
                                     >
-                                        <AlertCircle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                                        <AlertCircle
+                                            size={20}
+                                            className="text-amber-600 mt-0.5"
+                                        />
                                         <div>
                                             <p className="text-sm font-semibold text-amber-800 mb-1">
                                                 Minimum Order: ₹50.00
@@ -296,11 +383,15 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                     </motion.div>
                                 )}
 
-                                {/* Summary Details */}
+                                {/* SUMMARY */}
                                 <div className="space-y-3 mb-4">
                                     <div className="flex justify-between text-sm text-gray-600">
-                                        <span>Subtotal ({cartCount} items)</span>
-                                        <span className="font-semibold">₹{totalPrice.toFixed(2)}</span>
+                                        <span>
+                                            Subtotal ({cartCount} items)
+                                        </span>
+                                        <span className="font-semibold">
+                                            ₹{totalPrice.toFixed(2)}
+                                        </span>
                                     </div>
 
                                     <div className="flex justify-between text-sm text-gray-600">
@@ -308,19 +399,25 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                             <Truck size={16} />
                                             <span>Delivery</span>
                                         </div>
-                                        <span className="font-semibold text-green-600">FREE</span>
+                                        <span className="font-semibold text-green-600">
+                                            FREE
+                                        </span>
                                     </div>
 
                                     {savings > 0 && (
                                         <div className="flex justify-between text-sm text-green-600">
                                             <span>Total Savings</span>
-                                            <span className="font-semibold">-₹{savings.toFixed(2)}</span>
+                                            <span className="font-semibold">
+                                                -₹{savings.toFixed(2)}
+                                            </span>
                                         </div>
                                     )}
 
                                     <div className="pt-3 border-t border-gray-200">
                                         <div className="flex justify-between items-baseline">
-                                            <span className="text-lg font-bold text-gray-800">Total</span>
+                                            <span className="text-lg font-bold text-gray-800">
+                                                Total
+                                            </span>
                                             <span className="text-2xl font-bold text-emerald-600">
                                                 ₹{totalPrice.toFixed(2)}
                                             </span>
@@ -328,7 +425,7 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Checkout Button */}
+                                {/* CHECKOUT BUTTON */}
                                 <button
                                     onClick={handleCheckout}
                                     disabled={isCheckingOut || totalPrice < 50}
@@ -338,7 +435,11 @@ const ShowCart: React.FC<ShowCartProps> = ({
                                         <>
                                             <motion.div
                                                 animate={{ rotate: 360 }}
-                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                transition={{
+                                                    duration: 1,
+                                                    repeat: Infinity,
+                                                    ease: "linear"
+                                                }}
                                                 className="w-5 h-5 border-3 border-white border-t-transparent rounded-full"
                                             />
                                             Processing...

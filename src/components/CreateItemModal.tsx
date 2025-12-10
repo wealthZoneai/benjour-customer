@@ -37,6 +37,10 @@ const defaultData = {
   preview: "",
   imageUrl: "",
   quantity: "",
+  minValue: "",
+  maxValue: "",
+  stepValue: "",
+  unitType: "",
 };
 
 export default function CreateItemModal({
@@ -334,7 +338,9 @@ export default function CreateItemModal({
               </div>
 
               {/* RIGHT SIDE: FORM INPUTS */}
+              {/* RIGHT SIDE: FORM INPUTS */}
               <div className="lg:col-span-8 space-y-6">
+
                 {/* NAME */}
                 <InputGroup label="Product Name" icon={<Package size={16} />}>
                   <input
@@ -371,28 +377,64 @@ export default function CreateItemModal({
                     step="1"
                   />
 
-                  <InputMini
-                    label="Rating"
-                    name="rating"
-                    type="number"
-                    icon={<Star size={14} />}
-                    value={form.rating}
+                </div>
+                {/* UNIT TYPE DROPDOWN */}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block text-zinc-700 dark:text-zinc-300">
+                    Unit Type
+                  </label>
+
+                  <select
+                    name="unitType"
+                    value={form.unitType}
                     onChange={handleChange}
-                    placeholder="4.5"
+                    className="w-full p-3 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">Select Unit Type</option>
+                    <option value="KILOGRAM">Kilogram</option>
+                    <option value="GRAM">Gram</option>
+                    <option value="LITER">Liter</option>
+                    <option value="MILLILITER">Milliliter</option>
+                    <option value="PIECE">Piece</option>
+                    <option value="PACKET">Packet</option>
+                    <option value="BOX">Box</option>
+                  </select>
+                </div>
+
+                {/* MIN, MAX, STEP VALUES */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <InputMini
+                    label="Min Value"
+                    name="minValue"
+                    type="number"
+                    value={form.minValue}
+                    onChange={handleChange}
+                    placeholder="0.5"
                     step="0.1"
-                    min="0"
-                    max="5"
                   />
 
                   <InputMini
-                    label="Unit"
-                    name="quantity"
-                    icon={<Scale size={14} />}
-                    value={form.quantity}
+                    label="Max Value"
+                    name="maxValue"
+                    type="number"
+                    value={form.maxValue}
                     onChange={handleChange}
-                    placeholder="e.g. 1kg / 750ml"
+                    placeholder="25"
+                    step="0.1"
+                  />
+
+                  <InputMini
+                    label="Step Value"
+                    name="stepValue"
+                    type="number"
+                    value={form.stepValue}
+                    onChange={handleChange}
+                    placeholder="0.5"
+                    step="0.1"
                   />
                 </div>
+
+
 
                 {/* DESCRIPTION */}
                 <div>
@@ -409,6 +451,7 @@ export default function CreateItemModal({
                   />
                 </div>
               </div>
+
             </form>
           )}
 

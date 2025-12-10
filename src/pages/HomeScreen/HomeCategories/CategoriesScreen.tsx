@@ -117,7 +117,7 @@ const CategoriesScreen: React.FC = () => {
             {/* Horizontal Scrolling Categories */}
             <div className="relative">
               {/* Scroll Container */}
-              <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+              <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory">
                 {categories.map((category, index) => (
                   <motion.div
                     key={category.id}

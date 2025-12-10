@@ -7,7 +7,14 @@ export interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  discount: number;
+
+  unitType: string | null;   // FIXED
+  minValue: number | null;   // FIXED
+  maxValue: number | null;   // FIXED
+  stepValue: number | null;  // FIXED
 }
+
 
 interface CartState {
   items: CartItem[];
@@ -21,7 +28,7 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    
+
     // ✅ Replace entire cart from backend
     setCart: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload;
@@ -29,16 +36,35 @@ const cartSlice = createSlice({
 
     // ✅ Add single item (local add-to-cart)
     addToCart: (state, action: PayloadAction<CartItem>) => {
-      const existing = state.items.find((i) => i.id === action.payload.id);
+      const payload = action.payload;
+
+      const existing = state.items.find((i) => i.id === payload.id);
+
       if (existing) {
-        existing.quantity += action.payload.quantity || 1;
+        existing.quantity += payload.quantity || 1;
       } else {
         state.items.push({
-          ...action.payload,
-          quantity: action.payload.quantity || 1,
+          id: payload.id,
+          name: payload.name,
+          price: payload.price,
+          image: payload.image,
+
+          // ADD THIS ↓↓↓
+          discount: payload.discount ?? 0,
+
+          // Dynamic unit values
+          unitType: payload.unitType ?? null,
+          minValue: payload.minValue ?? 1,
+          maxValue: payload.maxValue ?? 50,
+          stepValue: payload.stepValue ?? 1,
+
+          // quantity
+          quantity: payload.quantity || payload.minValue || 1,
         });
       }
     },
+
+
 
     // ❌ Remove one item
     removeFromCart: (state, action: PayloadAction<number>) => {
@@ -59,20 +85,37 @@ const cartSlice = createSlice({
       if (item) item.quantity = action.payload.quantity;
     },
 
-    // ➕ Increase quantity
-    increaseQuantity: (state, action: PayloadAction<number>) => {
-      const item = state.items.find((i) => i.id === action.payload);
-      if (item) item.quantity += 1;
-    },
+    // ➕ Increase quantity (dynamic step)
+    increaseQuantity: (
+      state,
+      action: PayloadAction<{ id: number; amount: number }>
+    ) => {
+      const { id, amount } = action.payload;
+      const item = state.items.find((i) => i.id === id);
 
-    // ➖ Decrease quantity
-    decreaseQuantity: (state, action: PayloadAction<number>) => {
-      const item = state.items.find((i) => i.id === action.payload);
       if (item) {
-        if (item.quantity > 1) item.quantity -= 1;
-        else state.items = state.items.filter((i) => i.id !== action.payload);
+        item.quantity = item.quantity + amount;
       }
     },
+
+    decreaseQuantity: (
+      state,
+      action: PayloadAction<{ id: number; amount: number; min: number }>
+    ) => {
+      const { id, amount, min } = action.payload;
+      const item = state.items.find((i) => i.id === id);
+
+      if (!item) return;
+
+      const newQty = item.quantity - amount;
+
+      if (newQty <= min) {
+        state.items = state.items.filter((i) => i.id !== id);
+      } else {
+        item.quantity = newQty;
+      }
+    },
+
   },
 });
 

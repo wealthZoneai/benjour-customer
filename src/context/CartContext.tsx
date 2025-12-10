@@ -6,6 +6,10 @@ type CartItem = {
   price: number;
   quantity: number;
   image: string;
+  maxValue: number;
+  minValue: number;
+  stepValue: number;
+  unit: string;
 };
 
 type CartContextType = {

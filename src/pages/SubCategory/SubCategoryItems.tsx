@@ -22,6 +22,10 @@ export interface GroceryProduct {
     isFavorite: boolean;
     imageUrl: string;
     category: string;
+    minValue: number;
+    maxValue: number;
+    stepValue: number;
+    unitType: string;
 }
 
 const GroceryItems: React.FC = () => {
@@ -333,14 +337,17 @@ const GroceryItems: React.FC = () => {
 
                                     {/* Card */}
                                     <SubItemCard
-                                        id={product.id}
-                                        name={product.name}
-                                        category={product.category}
-                                        price={product.price}
-                                        image={product.imageUrl}
-                                        discount={product.discount}
-                                        rating={product.rating}
-                                        isFavorite={product.isFavorite}
+                                        id={product?.id}
+                                        name={product?.name}
+                                        category={product?.category}
+                                        price={product?.price}
+                                        image={product?.imageUrl}
+                                        discount={product?.discount}
+                                        rating={product?.rating}
+                                        minValue={product?.minValue}
+                                        maxValue={product?.maxValue}
+                                        stepValue={product?.stepValue}
+                                        unitType={product?.unitType}
                                         onViewDetails={() => setSelectedProduct(product)}
                                     />
                                 </motion.div>

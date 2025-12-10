@@ -183,7 +183,10 @@ export function createItem(subCategoryId: string, data: any) {
   formData.append("discount", data.discount?.toString() || "0");
   formData.append("rating", data.rating?.toString() || "0");
   formData.append("quantity", data.quantity?.toString() || "");
-  formData.append("isFavorite", data.isFavorite ? "true" : "false");
+  formData.append("minValue", data.minValue?.toString() || "");
+  formData.append("maxValue", data.maxValue?.toString() || "");
+  formData.append("stepValue", data.stepValue?.toString() || "");
+  formData.append("unitType", data.unitType);
 
   if (data.file || data.imageFile) {
     formData.append("file", data.file || data.imageFile);
@@ -201,9 +204,11 @@ export function updateItem(itemId: string, data: any) {
   formData.append("description", data.description || "");
   formData.append("price", data.price.toString());
   formData.append("discount", data.discount?.toString() || "0");
-  formData.append("rating", data.rating?.toString() || "0");
   formData.append("quantity", data.quantity?.toString() || "");
-  formData.append("isFavorite", data.isFavorite ? "true" : "false");
+  formData.append("minValue", data.minValue?.toString() || "");
+  formData.append("maxValue", data.maxValue?.toString() || "");
+  formData.append("stepValue", data.stepValue?.toString() || "");
+  formData.append("unitType", data.unitType);
 
   if (data.file || data.imageFile) {
     formData.append("file", data.file || data.imageFile);

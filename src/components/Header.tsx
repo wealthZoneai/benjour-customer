@@ -23,7 +23,8 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
   const dispatch = useDispatch();
 
   const cart = useSelector((state: RootState) => state.cart.items);
-  const userId = useSelector((state: RootState) => state.user.userId);
+  console.log(cart);
+  const { userId, role } = useSelector((state: RootState) => state.user);
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -64,6 +65,11 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
           price: cartItem.item.price,
           quantity: cartItem.quantity,
           image: cartItem.item.imageUrl || cartItem.item.image,
+          unitType: cartItem.item.unitType,
+          minValue: cartItem.item.minValue,
+          maxValue: cartItem.item.maxValue,
+          stepValue: cartItem.item.stepValue,
+          discount: cartItem.item.discount,
         }));
 
         dispatch(setCart(formattedItems));
@@ -137,14 +143,14 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-white shadow-sm">
       <div className="flex items-center justify-between px-4 sm:px-8 py-3">
-          {/* Logo */}
-          <div
+        {/* Logo */}
+        <div
           className="text-2xl sm:text-3xl font-extrabold cursor-pointer"
-            onClick={() => navigate("/home")}
-            role="button"
-          >
+          onClick={() => navigate("/home")}
+          role="button"
+        >
           🍹 MyStore
-          </div>
+        </div>
 
         {/* Right Side Icons */}
         <div className="flex items-center gap-3 sm:gap-4">
@@ -158,23 +164,23 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
               <Search className="w-5 h-5" />
             </button>
 
-                <input
-                  type="text"
-                  value={query}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
+            <input
+              type="text"
+              value={query}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
               placeholder="Search your favorite..."
               className="bg-transparent outline-none ml-2 text-sm text-gray-700 w-full"
-                />
-                {query && (
-                  <button
-                    onClick={clearSearch}
-                    className="ml-2 text-gray-400 hover:text-gray-600 transition"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+            />
+            {query && (
+              <button
+                onClick={clearSearch}
+                className="ml-2 text-gray-400 hover:text-gray-600 transition"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Right Side Icons */}
@@ -228,6 +234,35 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
                 </span>
               )}
             </button>
+
+
+            {/* Admin Dashboard - Only visible to Admins */}
+            {role === "ADMIN" && (
+              <button
+                onClick={() => navigate("/admin-dashboard")}
+                className="p-2.5 rounded-xl hover:bg-purple-50 transition group"
+                aria-label="Admin Dashboard"
+              >
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full opacity-0 group-hover:opacity-20 transition-opacity" />
+                  {/* Use a Shield or LayoutDashboard icon */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-gray-700 group-hover:text-purple-600 transition"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                  </svg>
+                </div>
+              </button>
+            )}
 
             {/* Profile */}
             <button
