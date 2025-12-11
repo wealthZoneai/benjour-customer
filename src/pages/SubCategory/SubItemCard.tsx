@@ -69,7 +69,7 @@ const [quantity, setQuantity] = React.useState(min);
     }
 
     try {
-      const response = await setFavoriteItem(id, newFavoriteStatus);
+      const response = await setFavoriteItem(id, newFavoriteStatus,userId);
 
       if (!response || !response.data) {
         if (isWishlisted) dispatch(addToWishlist({ id, name, price, image, category }));
@@ -191,7 +191,7 @@ const [quantity, setQuantity] = React.useState(min);
               className={`${i < rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`}
             />
           ))}
-          <span className="text-xs text-gray-500 ml-1">({rating}.0)</span>
+          <span className="text-xs text-gray-500 ml-1">({rating}0)</span>
         </div>
 
         {/* Dynamic Price */}

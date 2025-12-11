@@ -8,6 +8,12 @@ export interface WishlistItem {
   price: number;
   category: string;
   rating?: number;
+  discount?: number;
+  maxValue?: number;
+  minValue?: number;
+  stepValue?: number;
+  unitType?: string;
+  
 }
 
 interface WishlistState {

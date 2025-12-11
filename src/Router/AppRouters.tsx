@@ -17,6 +17,7 @@ import ProcessingPayment from "../pages/PaymentProcessing";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import AnalyticsDashboard from "../pages/Admin/Analytics/AnalyticsDashboard";
 import Coupons from "../pages/Admin/Marketing/Coupons";
+import AdminOrderScreen from "../pages/Admin/Orders/AdminOrderScreen";
 
 
 const AppRouters = () => {
@@ -45,6 +46,7 @@ const AppRouters = () => {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
           <Route path="/admin/marketing" element={<Coupons />} />
+          <Route path="/admin/orders" element={<AdminOrderScreen />} />
         </Route>
 
         {/* Routes without Header & Footer */}

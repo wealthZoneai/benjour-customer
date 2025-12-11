@@ -42,6 +42,14 @@ export function getAllOrders(userId: string) {
   return server.get(`${endpoints.getAllOrders}${userId}`, { requiresAuth: true });
 }
 
+export function getOrdersByStatus(status: string) {
+  return server.get(`${endpoints.getOrdersByStatus}${status}`, { requiresAuth: true });
+}
+
+export function updateOrderStatus(orderId: string, status: string) {
+  return server.put(`${endpoints.updateOrderStatus}?orderId=${orderId}&status=${status}`, { requiresAuth: true });
+}
+
 export function getUserProfile(userId: string) {
   return server.get(`${endpoints.getProfile}${userId}`, { requiresAuth: true });
 }
@@ -180,8 +188,8 @@ export function createItem(subCategoryId: string, data: any) {
   formData.append("name", data.name);
   formData.append("description", data.description || "");
   formData.append("price", data.price.toString());
+  formData.append("stock", data.stock.toString());
   formData.append("discount", data.discount?.toString() || "0");
-  formData.append("rating", data.rating?.toString() || "0");
   formData.append("quantity", data.quantity?.toString() || "");
   formData.append("minValue", data.minValue?.toString() || "");
   formData.append("maxValue", data.maxValue?.toString() || "");
@@ -204,6 +212,7 @@ export function updateItem(itemId: string, data: any) {
   formData.append("description", data.description || "");
   formData.append("price", data.price.toString());
   formData.append("discount", data.discount?.toString() || "0");
+  formData.append("stock", data.stock.toString());
   formData.append("quantity", data.quantity?.toString() || "");
   formData.append("minValue", data.minValue?.toString() || "");
   formData.append("maxValue", data.maxValue?.toString() || "");
@@ -272,14 +281,14 @@ export function updateCartQuantity(userId: any, itemId: any, quantity: number) {
 // ============================================
 
 // Get all favorite items for the current user
-export function getFavoriteItems() {
-  return server.get(endpoints.getFavoriteItems, { requiresAuth: true });
+export function getFavoriteItems(userId: string) {
+  return server.get(`${endpoints.getFavoriteItems}?userId=${userId}`, { requiresAuth: true });
 }
 
 // Set/unset an item as favorite
-export function setFavoriteItem(itemId: string | number, isFavorite: boolean) {
+export function setFavoriteItem(itemId: string | number, isFavorite: boolean, userId: string) {
   return server.put(
-    `${endpoints.setFavoriteItem}?itemId=${itemId}&isFavorite=${isFavorite}`,
+    `${endpoints.setFavoriteItem}?itemId=${itemId}&isFavorite=${isFavorite}&userId=${userId}`,
     {},
     { requiresAuth: true }
   );

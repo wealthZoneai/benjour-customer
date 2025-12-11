@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { calcLength, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Search, ShoppingCart, Heart } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
@@ -83,7 +83,7 @@ const SearchResults: React.FC = () => {
         }
         try {
             const newStatus = !product.isFavorite;
-            await setFavoriteItem(product.id, newStatus);
+            await setFavoriteItem(product.id, newStatus,userId);
             // Optimistic update
             setProducts(prev => prev.map(p =>
                 p.id === product.id ? { ...p, isFavorite: newStatus } : p

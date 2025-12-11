@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
   async function getAllWishlist() {
     if (!userId) return;
     try {
-      const response = await getFavoriteItems();
+      const response = await getFavoriteItems(userId);
       if (response.data) {
         // Handle response.data being the array or wrapped
         const wishlistData = Array.isArray(response.data) ? response.data : (response.data.items || []);
@@ -199,41 +199,57 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
             </button>
 
             {/* Wishlist */}
-            <button
-              onClick={() => navigate("/wishlist")}
-              className="relative p-2.5 rounded-xl hover:bg-red-50 transition group"
-              aria-label="Wishlist"
-            >
-              <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-500 transition" />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                  {wishlistCount}
-                </span>
-              )}
-            </button>
+            {role !== "ADMIN" && (
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="relative p-2.5 rounded-xl hover:bg-red-50 transition group"
+                aria-label="Wishlist"
+              >
+                <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-500 transition" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* My Orders */}
-            <button
-              onClick={() => navigate("/orders")}
-              className="relative p-2.5 rounded-xl hover:bg-blue-50 transition group"
-              aria-label="My Orders"
-            >
-              <Package className="w-5 h-5 text-gray-700 group-hover:text-blue-500 transition" />
-            </button>
+            {role !== "ADMIN" && (
+              <button
+                onClick={() => navigate("/orders")}
+                className="relative p-2.5 rounded-xl hover:bg-blue-50 transition group"
+                aria-label="My Orders"
+              >
+                <Package className="w-5 h-5 text-gray-700 group-hover:text-blue-500 transition" />
+              </button>
+            )}
+            {/* Admin Dashboard - Only visible to Admins */}
+            {role === "ADMIN" && (
+              <button
+                onClick={() => navigate("/admin/orders")}
+                className="p-2.5 rounded-xl hover:bg-purple-50 transition group"
+                aria-label="Admin Dashboard"
+              >
+                <Package className="w-5 h-5 text-gray-700 group-hover:text-blue-500 transition" />
+              </button>
+            )}
 
             {/* Cart */}
-            <button
-              className="relative p-2.5 rounded-xl hover:bg-emerald-50 transition group"
-              onClick={() => setShowCart(true)}
-              aria-label="Open cart"
-            >
-              <ShoppingCart className="w-5 h-5 text-gray-700 group-hover:text-emerald-500 transition" />
-              {cart.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                  {cart.length}
-                </span>
-              )}
-            </button>
+            {role !== "ADMIN" && (
+              <button
+                className="relative p-2.5 rounded-xl hover:bg-emerald-50 transition group"
+                onClick={() => setShowCart(true)}
+                aria-label="Open cart"
+              >
+                <ShoppingCart className="w-5 h-5 text-gray-700 group-hover:text-emerald-500 transition" />
+                {cart.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {cart.length}
+                  </span>
+                )}
+              </button>
+            )}
 
 
             {/* Admin Dashboard - Only visible to Admins */}

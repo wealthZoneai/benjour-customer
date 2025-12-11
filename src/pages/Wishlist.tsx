@@ -3,10 +3,11 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../Redux/store";
 import { addToCart } from "../Redux/cartSlice";
 import { addToWishlist, removeFromWishlist, clearWishlist } from "../Redux/wishlistSlice";
-import { ShoppingCart, Plus, Minus, Heart, ShoppingBag, Sparkles } from "lucide-react";
+import { Heart, ShoppingBag, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { getFavoriteItems, setFavoriteItem, AddToCart } from "../services/apiHelpers";
+import SubItemCard from "./SubCategory/SubItemCard";
 
 const Wishlist: React.FC = () => {
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
@@ -24,7 +25,7 @@ const Wishlist: React.FC = () => {
       }
 
       try {
-        const response = await getFavoriteItems();
+        const response = await getFavoriteItems(userId);
 
         if (response?.data) {
           // Clear existing wishlist and populate with API data
@@ -109,7 +110,7 @@ const Wishlist: React.FC = () => {
 
     try {
       // Call API to persist favorite status
-      const response = await setFavoriteItem(item.id, newFavoriteStatus);
+      const response = await setFavoriteItem(item.id, newFavoriteStatus, userId);
 
       if (!response || !response.data) {
         // Revert optimistic update on failure
@@ -219,8 +220,8 @@ const Wishlist: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence>
             {wishlist.map((item, index) => {
-              const quantity = quantities[item.id] || 1;
-              const isWishlisted = wishlist.some((w) => w.id === item.id);
+              // const quantity = quantities[item.id] || 1;
+              // const isWishlisted = wishlist.some((w) => w.id === item.id);
 
               return (
                 <motion.div
@@ -231,101 +232,19 @@ const Wishlist: React.FC = () => {
                   transition={{ delay: index * 0.05 }}
                   className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
                 >
-                  {/* Image Container */}
-                  <div className="relative h-48 overflow-hidden bg-gray-100">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-
-                    {/* Wishlist Button */}
-                    <button
-                      onClick={() => toggleWishlist(item)}
-                      className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
-                    >
-                      <Heart
-                        size={20}
-                        className={`${isWishlisted
-                            ? "fill-red-500 text-red-500"
-                            : "text-gray-400"
-                          } transition-colors`}
-                      />
-                    </button>
-
-                    {/* Category Badge */}
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                      <p className="text-xs font-medium text-gray-700">
-                        {item.category || "General"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 min-h-[2.5rem]">
-                      {item.name}
-                    </h3>
-
-                    {/* Rating */}
-                    <div className="flex items-center gap-1 mb-3">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <span
-                          key={i}
-                          className={`text-sm ${i < (item.rating || 4)
-                              ? "text-yellow-400"
-                              : "text-gray-300"
-                            }`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                      <span className="text-xs text-gray-500 ml-1">
-                        ({item.rating || 4}.0)
-                      </span>
-                    </div>
-
-                    {/* Price */}
-                    <div className="flex items-baseline gap-2 mb-4">
-                      <p className="text-2xl font-bold text-emerald-600">
-                        ₹{item.price}
-                      </p>
-                      <p className="text-sm text-gray-400 line-through">
-                        ₹{(item.price * 1.2).toFixed(0)}
-                      </p>
-                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                        17% OFF
-                      </span>
-                    </div>
-
-                    {/* Quantity Selector */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <button
-                        onClick={() => handleQuantityChange(item.id, -1)}
-                        className="w-8 h-8 rounded-full border-2 border-emerald-600 text-emerald-600 flex items-center justify-center hover:bg-emerald-50 transition-colors"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className="flex-1 text-center font-semibold text-gray-800">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => handleQuantityChange(item.id, 1)}
-                        className="w-8 h-8 rounded-full border-2 border-emerald-600 text-emerald-600 flex items-center justify-center hover:bg-emerald-50 transition-colors"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-
-                    {/* Add to Cart Button */}
-                    <button
-                      onClick={() => handleAddToCart(item)}
-                      className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-3 rounded-xl font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                    >
-                      <ShoppingCart size={18} />
-                      Add to Cart
-                    </button>
-                  </div>
+                  <SubItemCard
+                    id={item?.id}
+                    name={item?.name}
+                    category={item?.category}
+                    price={item?.price}
+                    image={item?.image}
+                    discount={item?.discount}
+                    rating={item?.rating}
+                    minValue={item?.minValue}
+                    maxValue={item?.maxValue}
+                    stepValue={item?.stepValue}
+                    unitType={item?.unitType}
+                  />
                 </motion.div>
               );
             })}

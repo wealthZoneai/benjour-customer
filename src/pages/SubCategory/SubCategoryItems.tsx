@@ -113,6 +113,7 @@ const GroceryItems: React.FC = () => {
 
     // When creating OR updating item
     const handleSubmitItem = async (data: any) => {
+        console.log(data)
         try {
             if (editingItem) {
                 // Edit existing item

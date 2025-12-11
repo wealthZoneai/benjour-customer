@@ -11,6 +11,9 @@ const endpoints = {
     createProfile: 'api/profile/createProfile?userId=',
     updateProfile: 'api/profile/updateProfile?userId=',
 
+    getOrdersByStatus: 'api/profile/orders/by-status?status=',
+    updateOrderStatus: 'api/profile/setStatus',
+
     getMainCategories: 'api/categories/getAllCategories',
     createMainCategory: 'api/categories/createCategory',
     updateMainCategory: 'api/categories/updateCategory?id=',
@@ -22,7 +25,7 @@ const endpoints = {
     createSubcategory: 'api/subcategories/createSubCategory?categoryId=',
     updateSubcategory: 'api/subcategories/updateSubcategory?subcategoryId=',
     deleteSubcategory: 'api/subcategories/deleteCategory?id=',
-    
+
     // Items under subcategories
     getSubcategoryItems: 'api/items/getItemsBySubCategoryId?subCategoryId=',
     createItem: 'api/items/createItem?subCategoryId=',
@@ -38,7 +41,7 @@ const endpoints = {
     updateQuantity: 'Cart/updateQuantity?userId=',
 
     // Favorites/Wishlist
-    getFavoriteItems: 'api/items/isFavorite',
+    getFavoriteItems: 'api/items/isFavorites',
     setFavoriteItem: 'api/items/setFavorite',
 
     // Home Screen Sections

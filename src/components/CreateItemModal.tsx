@@ -12,6 +12,7 @@ import {
   Package,
   Bookmark,
   Scale,
+  Warehouse,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import InputGroup from "./InputGroup";
@@ -30,6 +31,7 @@ const defaultData = {
   name: "",
   price: "",
   discount: "",
+  stock: "",
   rating: "",
   description: "",
   isFavorite: false,
@@ -376,6 +378,16 @@ export default function CreateItemModal({
                     placeholder="10"
                     step="1"
                   />
+                  <InputMini
+                    label="Stock Quantity"
+                    name="stock"
+                    type="number"
+                    icon={<Warehouse size={14} />}
+                    value={form.stock}
+                    onChange={handleChange}
+                    placeholder="10"
+                    step="1"
+                  />
 
                 </div>
                 {/* UNIT TYPE DROPDOWN */}
@@ -393,10 +405,11 @@ export default function CreateItemModal({
                     <option value="">Select Unit Type</option>
                     <option value="KILOGRAM">Kilogram</option>
                     <option value="GRAM">Gram</option>
-                    <option value="LITER">Liter</option>
-                    <option value="MILLILITER">Milliliter</option>
+                    <option value="LITRE">Liter</option>
+                    <option value="MILLILITRE">Milliliter</option>
                     <option value="PIECE">Piece</option>
-                    <option value="PACKET">Packet</option>
+                    <option value="BOTTLE">Bottle</option>
+                    <option value="PACK">Packet</option>
                     <option value="BOX">Box</option>
                   </select>
                 </div>

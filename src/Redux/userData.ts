@@ -4,7 +4,7 @@ interface UserState {
   token: string | null;
   role: string | null;
   userName?: string | null;
-  userId?: string | null;
+  userId?: any | null;
 }
 
 const initialState: UserState = {
@@ -19,7 +19,7 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     // ✅ Save token & merchantId
-    setUserData: (state, action: PayloadAction<{ token: string; role: string,userName:string,userId:string }>) => {
+    setUserData: (state, action: PayloadAction<{ token: string; role: string,userName:string,userId:any }>) => {
       state.token = action.payload.token;
       state.role = action.payload.role;
       state.userName = action.payload.userName || null;
