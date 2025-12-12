@@ -19,13 +19,22 @@ import AnalyticsDashboard from "../pages/Admin/Analytics/AnalyticsDashboard";
 import Coupons from "../pages/Admin/Marketing/Coupons";
 import AdminOrderScreen from "../pages/Admin/Orders/AdminOrderScreen";
 
+import PrivateRoute from "../utils/PrivateRoute";
+import PublicRoute from "../utils/PublicRoute";
 
 const AppRouters = () => {
   return (
     <>
       <ScrollToTop />
       <Routes>
-        <Route element={<Layout />}>
+        {/* ---------------------- PROTECTED ROUTES ---------------------- */}
+        <Route
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/search" element={<SearchResults />} />
@@ -49,10 +58,26 @@ const AppRouters = () => {
           <Route path="/admin/orders" element={<AdminOrderScreen />} />
         </Route>
 
-        {/* Routes without Header & Footer */}
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/otp" element={<OtpScreen />} />
+        {/* ---------------------- PUBLIC ROUTES ---------------------- */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
+        <Route path="/otp"element={ <PublicRoute><OtpScreen /> </PublicRoute>
+          }
+        />
       </Routes>
     </>
   );
