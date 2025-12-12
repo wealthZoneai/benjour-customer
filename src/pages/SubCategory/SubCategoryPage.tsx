@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Pencil, Trash2, Loader2, Package, ArrowRight } from "lucide-react";
+import { ChevronRight, Plus, Pencil, Trash2, Package, ArrowRight } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../Redux/store";
 import CreateCategoryModal from "../../components/CreateCategoryModal";

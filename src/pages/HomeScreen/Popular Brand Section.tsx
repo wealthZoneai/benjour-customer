@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Wine, Flame, Grape, Pencil, X, Loader2, Award, Star, TrendingUp } from "lucide-react";
+import { Wine, Pencil, X, Loader2, Award, Star, TrendingUp } from "lucide-react";
 import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";

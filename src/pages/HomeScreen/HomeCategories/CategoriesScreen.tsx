@@ -7,7 +7,7 @@ import { Loader2, Plus, ChevronRight, Sparkles } from "lucide-react";
 import type { RootState } from "../../../Redux/store";
 import CreateCategoryModal from "./CreateMainCategoryModal";
 import DeleteModal from "../../../components/DeleteModal";
-import { getMainCategories, createMainCategory, updateMainCategory, deleteMainCategory } from "../../../services/apiHelpers";
+import { getMainCategories,  deleteMainCategory } from "../../../services/apiHelpers";
 
 interface Category {
   id: string;

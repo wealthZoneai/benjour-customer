@@ -179,7 +179,7 @@ interface ModalProps {
   onSuccess: (item: GroceryItem) => void;
 }
 
-const GroceryModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onSuccess }) => {
+const GroceryModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData }) => {
   const [name, setName] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
@@ -216,7 +216,7 @@ const GroceryModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onSu
       formData.append("name", name);
       if (imageFile) formData.append("image", imageFile);
 
-      let response;
+      // let response;
       // if (initialData) {
       //   response = await updateHomeGrocery(initialData.id.toString(), formData);
       // } else {

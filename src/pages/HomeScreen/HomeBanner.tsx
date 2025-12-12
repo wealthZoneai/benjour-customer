@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Pencil, Search, MapPin, ChevronDown, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { RootState } from "../../Redux/store";
-import { getHomeBanner, updateHomeBanner } from "../../services/apiHelpers";
+import { getHomeBanner } from "../../services/apiHelpers";
 import EditBannerModal from "./EditBannerModal";
 import alcoholImage from "../../assets/beer.jpg";
 
@@ -26,8 +26,8 @@ const HomeBanner: React.FC = () => {
   const { role } = useSelector((state: RootState) => state.user);
   const [bannerData, setBannerData] = useState<BannerData>(fallbackBanner);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [, setIsVideoReady] = useState(false);
+  const [, setIsVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {

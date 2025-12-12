@@ -2,18 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../Redux/store";
 import { addToCart } from "../Redux/cartSlice";
-import { addToWishlist, removeFromWishlist, clearWishlist } from "../Redux/wishlistSlice";
+import { addToWishlist, clearWishlist } from "../Redux/wishlistSlice";
 import { Heart, ShoppingBag, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { getFavoriteItems, setFavoriteItem, AddToCart } from "../services/apiHelpers";
+import { getFavoriteItems, AddToCart } from "../services/apiHelpers";
 import SubItemCard from "./SubCategory/SubItemCard";
 
 const Wishlist: React.FC = () => {
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
   const userId = useSelector((state: RootState) => state.user.userId);
   const dispatch = useDispatch();
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [quantities, ] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
 
   // Fetch favorite items from API on component mount
@@ -85,63 +85,63 @@ const Wishlist: React.FC = () => {
     }
   };
 
-  const handleQuantityChange = (id: number, delta: number) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: Math.max(1, (prev[id] || 1) + delta),
-    }));
-  };
+  // const handleQuantityChange = (id: number, delta: number) => {
+  //   setQuantities((prev) => ({
+  //     ...prev,
+  //     [id]: Math.max(1, (prev[id] || 1) + delta),
+  //   }));
+  // };
 
-  const toggleWishlist = async (item: any) => {
-    if (!userId) {
-      toast.error("Please login to manage your wishlist");
-      return;
-    }
+  // const toggleWishlist = async (item: any) => {
+  //   if (!userId) {
+  //     toast.error("Please login to manage your wishlist");
+  //     return;
+  //   }
 
-    const isWishlisted = wishlist.some((w) => w.id === item.id);
-    const newFavoriteStatus = !isWishlisted;
+  //   const isWishlisted = wishlist.some((w) => w.id === item.id);
+  //   const newFavoriteStatus = !isWishlisted;
 
-    // Optimistic UI update
-    if (isWishlisted) {
-      dispatch(removeFromWishlist(item.id));
-    } else {
-      dispatch(addToWishlist(item));
-    }
+  //   // Optimistic UI update
+  //   if (isWishlisted) {
+  //     dispatch(removeFromWishlist(item.id));
+  //   } else {
+  //     dispatch(addToWishlist(item));
+  //   }
 
-    try {
-      // Call API to persist favorite status
-      const response = await setFavoriteItem(item.id, newFavoriteStatus, userId);
+  //   try {
+  //     // Call API to persist favorite status
+  //     const response = await setFavoriteItem(item.id, newFavoriteStatus, userId);
 
-      if (!response || !response.data) {
-        // Revert optimistic update on failure
-        if (isWishlisted) {
-          dispatch(addToWishlist(item));
-        } else {
-          dispatch(removeFromWishlist(item.id));
-        }
-        toast.error("Failed to update wishlist");
-        return;
-      }
+  //     if (!response || !response.data) {
+  //       // Revert optimistic update on failure
+  //       if (isWishlisted) {
+  //         dispatch(addToWishlist(item));
+  //       } else {
+  //         dispatch(removeFromWishlist(item.id));
+  //       }
+  //       toast.error("Failed to update wishlist");
+  //       return;
+  //     }
 
-      // Show success message
-      if (newFavoriteStatus) {
-        toast.success("Added to wishlist ❤️");
-      } else {
-        toast("Removed from wishlist 💔");
-      }
-    } catch (error) {
-      console.error("Wishlist API Error:", error);
+  //     // Show success message
+  //     if (newFavoriteStatus) {
+  //       toast.success("Added to wishlist ❤️");
+  //     } else {
+  //       toast("Removed from wishlist 💔");
+  //     }
+  //   } catch (error) {
+  //     console.error("Wishlist API Error:", error);
 
-      // Revert optimistic update on error
-      if (isWishlisted) {
-        dispatch(addToWishlist(item));
-      } else {
-        dispatch(removeFromWishlist(item.id));
-      }
+  //     // Revert optimistic update on error
+  //     if (isWishlisted) {
+  //       dispatch(addToWishlist(item));
+  //     } else {
+  //       dispatch(removeFromWishlist(item.id));
+  //     }
 
-      toast.error("Something went wrong while updating wishlist");
-    }
-  };
+  //     toast.error("Something went wrong while updating wishlist");
+  //   }
+  // };
 
   if (loading) {
     return (

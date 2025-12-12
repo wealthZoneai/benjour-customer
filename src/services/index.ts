@@ -7,6 +7,7 @@ declare module "axios" {
 }
 
 const httpClient = axios.create({
+  // baseURL: import.meta.env.VITE_API_BASE_URL,
   baseURL: "http://localhost:8080/",
   headers: {
     deviceType: "Web",

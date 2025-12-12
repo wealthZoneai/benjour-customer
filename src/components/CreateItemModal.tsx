@@ -11,7 +11,6 @@ import {
   FileText,
   Package,
   Bookmark,
-  Scale,
   Warehouse,
 } from "lucide-react";
 import * as XLSX from "xlsx";

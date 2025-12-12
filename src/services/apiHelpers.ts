@@ -248,6 +248,12 @@ export function deleteItem(itemId: string) {
 export function searchItems(query: string) {
   return server.get(`${endpoints.searchItems}${query}`, { requiresAuth: true });
 }
+
+// ============================================
+//  ADD TO CART SYSTEM
+export function fetchCaregotiesFilters(filter: string,id?:string) {
+  return server.get(`${endpoints.categoriesFilter}${filter}&id=${id}`, { requiresAuth: true });
+}
 // addToCart
 export function AddToCart(userId: string, itemId: string, quantity: any) {
   return server.post(

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, Home } from "lucide-react";
+import { CheckCircle, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const PaymentSuccess: React.FC = () => {

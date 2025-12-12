@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, ShoppingCart, Heart } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+import {  useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { searchItems, AddToCart, setFavoriteItem } from "../services/apiHelpers";
 import type { RootState } from "../Redux/store";
@@ -22,7 +22,7 @@ interface Product {
 const SearchResults: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const dispatch = useDispatch();
+    // const dispatch = useDispatch();
     const userId = useSelector((state: RootState) => state.user.userId);
     const query = searchParams.get("q") || "";
     const [products, setProducts] = useState<Product[]>([]);

@@ -33,6 +33,7 @@ const endpoints = {
     deleteItem: 'api/items/deleteItem?id=',
     searchItems: 'api/items/searchItems?name=',
     uploadBulkItems: 'api/items/upload-excel-zip',
+    categoriesFilter: 'api/categories/filter?filterType=',
 
     // addToCart
     addToCart: 'Cart/addToCart',

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Pencil, Trash2, Loader2, Filter, Grid3x3, List, Search } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Grid3x3, List, Search } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../Redux/store";
 import CreateItemModal from "../../components/CreateItemModal";
 import SubItemCard from "./SubItemCard";
 import SubItemHeader from "./SubItemHeader";
-import { getSubcategoryItems, createItem, updateItem, deleteItem, uploadBulkItems } from "../../services/apiHelpers";
+import { getSubcategoryItems, createItem, updateItem, deleteItem, uploadBulkItems, fetchCaregotiesFilters } from "../../services/apiHelpers";
 import { toast } from "react-hot-toast";
+
 
 // Updated product interface to match CreateItemModal fields
 export interface GroceryProduct {
@@ -35,14 +36,13 @@ const GroceryItems: React.FC = () => {
     const { name: categoryName, description: categoryDescription, image: categoryImage } = location.state || {};
 
     const [items, setItems] = useState<GroceryProduct[]>([]);
-    const [filteredItems, setFilteredItems] = useState<GroceryProduct[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<GroceryProduct | null>(null);
     const [editingItem, setEditingItem] = useState<GroceryProduct | null>(null);
     const [isItemModalOpen, setItemModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState<"name" | "price-low" | "price-high" | "rating">("name");
+    const [sortBy, setSortBy] = useState("SELECT_FILTER");
 
     // Fetch items on mount
     useEffect(() => {
@@ -50,37 +50,7 @@ const GroceryItems: React.FC = () => {
             fetchItems();
         }
     }, [subcategoryId]);
-
-    // Filter and sort items
-    useEffect(() => {
-        let result = [...items];
-
-        // Search filter
-        if (searchQuery) {
-            result = result.filter(item =>
-                item.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-
-        // Sort
-        switch (sortBy) {
-            case "price-low":
-                result.sort((a, b) => a.price - b.price);
-                break;
-            case "price-high":
-                result.sort((a, b) => b.price - a.price);
-                break;
-            case "rating":
-                result.sort((a, b) => b.rating - a.rating);
-                break;
-            case "name":
-            default:
-                result.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-        }
-
-        setFilteredItems(result);
-    }, [items, searchQuery, sortBy]);
+   
 
     const fetchItems = async () => {
         try {
@@ -96,6 +66,23 @@ const GroceryItems: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const getFilterItems = async (filterType: string) => {
+        if (filterType === "SELECT_FILTER") {
+            fetchItems();
+            setSortBy(filterType);
+            return;
+        }
+        try {
+            setLoading(true);
+            const response = await fetchCaregotiesFilters(filterType, subcategoryId);
+            setItems(response.data);
+            setSortBy(filterType);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // DELETE Item
     const handleDeleteItem = async (id: number) => {
@@ -211,13 +198,13 @@ const GroceryItems: React.FC = () => {
                             {/* Sort Dropdown */}
                             <select
                                 value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
+                                onChange={(e) => getFilterItems(e.target.value as any)}
                                 className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-white"
                             >
-                                <option value="name">Name (A-Z)</option>
-                                <option value="price-low">Price: Low to High</option>
-                                <option value="price-high">Price: High to Low</option>
-                                <option value="rating">Top Rated</option>
+                                <option value="SELECT_FILTER">Select Filter</option>
+                                <option value="PRICE_LOW_TO_HIGH">Price: Low to High</option>
+                                <option value="PRICE_HIGH_TO_LOW">Price: High to Low</option>
+                                <option value="TOP_RATED">Top Rated</option>
                             </select>
 
                             {/* View Mode Toggle */}
@@ -261,7 +248,7 @@ const GroceryItems: React.FC = () => {
                     {/* Results Count */}
                     <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
                         <p>
-                            Showing <span className="font-semibold text-gray-800">{filteredItems.length}</span> of{" "}
+                            Showing <span className="font-semibold text-gray-800">{items.length}</span> of{" "}
                             <span className="font-semibold text-gray-800">{items.length}</span> products
                         </p>
                         {searchQuery && (
@@ -276,7 +263,7 @@ const GroceryItems: React.FC = () => {
                 </div>
 
                 {/* Product Grid/List */}
-                {filteredItems.length === 0 ? (
+                {items.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -303,7 +290,7 @@ const GroceryItems: React.FC = () => {
                         }
                     >
                         <AnimatePresence>
-                            {filteredItems.map((product, index) => (
+                            {items.map((product, index) => (
                                 <motion.div
                                     key={product.id}
                                     initial={{ opacity: 0, y: 20 }}
