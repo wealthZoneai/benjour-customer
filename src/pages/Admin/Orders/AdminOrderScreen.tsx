@@ -1,254 +1,156 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Package,
-    Clock,
-    CheckCircle,
-    Truck,
-    ChefHat,
-    ShoppingBag,
-    TrendingUp,
-    DollarSign,
-    Users,
-    Activity,
-    MapPin,
-    MoreVertical,
-    Search,
-    Filter,
-    ArrowRight,
-    XCircle,
-    Calendar,
-    Receipt
+    Package, Clock, CheckCircle, Truck, ChefHat, ShoppingBag, TrendingUp,
+    DollarSign, Users, Activity, MapPin, MoreVertical, Search, Filter, ArrowRight, XCircle, Calendar, Receipt
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getOrdersByStatus, updateOrderStatus } from "../../../services/apiHelpers";
-
-// --- Type Definitions (Kept the same) ---
+ 
+// Types
 type OrderStatus = "PLACED" | "PREPARING" | "READY" | "ASSIGNED" | "PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED";
-
-interface OrderItem {
-    id: number;
-    name: string;
-    quantity: number;
-    price: number;
-    image?: string;
-}
-
+ 
+interface OrderItem { id: number; name: string; quantity: number; price: number; image?: string; }
 interface Order {
-    id: string;
-    orderNumber: string;
-    date: string;
-    status: OrderStatus;
-    items: OrderItem[];
-    totalAmount: number;
-    deliveryAddress: string;
-    customerName?: string;
-    customerPhone?: string;
+    id: string; orderNumber: string; date: string; status: OrderStatus; items: OrderItem[];
+    totalAmount: number; deliveryAddress: string; customerName?: string; customerPhone?: string;
 }
-
-// --- TABS Configuration (Updated Colors and Icons) ---
-const TABS: { id: OrderStatus; label: string; icon: React.ReactNode; color: string; hoverColor: string }[] = [
-    { id: "PLACED", label: "New Orders", icon: <Package size={18} />, color: "text-blue-600 bg-blue-50", hoverColor: "hover:bg-blue-100" },
-    { id: "PREPARING", label: "Preparing", icon: <ChefHat size={18} />, color: "text-orange-600 bg-orange-50", hoverColor: "hover:bg-orange-100" },
-    { id: "READY", label: "Ready for Pickup", icon: <CheckCircle size={18} />, color: "text-lime-600 bg-lime-50", hoverColor: "hover:bg-lime-100" }, // New Zomato-esque Green
-    { id: "ASSIGNED", label: "Driver Assigned", icon: <Clock size={18} />, color: "text-indigo-600 bg-indigo-50", hoverColor: "hover:bg-indigo-100" },
-    { id: "PICKUP", label: "Picked Up", icon: <ShoppingBag size={18} />, color: "text-purple-600 bg-purple-50", hoverColor: "hover:bg-purple-100" },
-    { id: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: <Truck size={18} />, color: "text-emerald-600 bg-emerald-50", hoverColor: "hover:bg-emerald-100" },
-    { id: "DELIVERED", label: "Delivered", icon: <CheckCircle size={18} />, color: "text-green-700 bg-green-100", hoverColor: "hover:bg-green-200" },
+ 
+// Tabs Config
+const TABS = [
+    { id: "PLACED", label: "New Orders", icon: <Package size={18} />, color: "text-blue-600 bg-blue-50" },
+    { id: "PREPARING", label: "Preparing", icon: <ChefHat size={18} />, color: "text-orange-600 bg-orange-50" },
+    { id: "READY", label: "Ready for Pickup", icon: <CheckCircle size={18} />, color: "text-lime-600 bg-lime-50" },
+    { id: "ASSIGNED", label: "Driver Assigned", icon: <Clock size={18} />, color: "text-indigo-600 bg-indigo-50" },
+    { id: "PICKUP", label: "Picked Up", icon: <ShoppingBag size={18} />, color: "text-purple-600 bg-purple-50" },
+    { id: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: <Truck size={18} />, color: "text-emerald-600 bg-emerald-50" },
+    { id: "DELIVERED", label: "Delivered", icon: <CheckCircle size={18} />, color: "text-green-700 bg-green-100" },
 ];
-
+ 
 const AdminOrderScreen: React.FC = () => {
     const [activeTab, setActiveTab] = useState<OrderStatus>("PLACED");
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-
+    const [orderCounts, setOrderCounts] = useState<Record<OrderStatus, number>>({});
+ 
     const fetchOrders = useCallback(async (status: OrderStatus) => {
         setLoading(true);
         try {
             const response = await getOrdersByStatus(status);
-            const data = response.data;
-
-            const mappedOrders: Order[] = (Array.isArray(data) ? data : []).map((item: any) => ({
+            setOrders((Array.isArray(response.data) ? response.data : []).map((item: any) => ({
                 id: item.id?.toString(),
                 orderNumber: `ORD-${item.id}`,
                 date: item.createdAt || new Date().toISOString(),
-                status: status, // Important: Status is taken from the tab for display consistency
+                status,
                 totalAmount: item.totalAmount || 0,
                 deliveryAddress: item.address?.fullAddress || "Address not provided",
                 customerName: item.user?.name || "Unknown Customer",
                 customerPhone: item.user?.phone || "No Phone",
                 items: item.orderItems?.map((oi: any) => ({
-                    id: oi.item?.id,
-                    name: oi.item?.name,
-                    quantity: oi.quantity,
-                    price: oi.priceAtPurchase || oi.item?.price,
-                    image: oi.item?.imageUrl
+                    id: oi.item?.id, name: oi.item?.name, quantity: oi.quantity, price: oi.priceAtPurchase || oi.item?.price, image: oi.item?.imageUrl
                 })) || []
-            }));
-
-            setOrders(mappedOrders);
+            })));
         } catch (error) {
-            console.error("Error fetching admin orders:", error);
+            console.error(error);
             toast.error("Failed to fetch orders.");
-            setOrders([]);
-        } finally {
-            setLoading(false);
+        } finally { setLoading(false); }
+    }, []);
+ 
+    const fetchOrderCounts = useCallback(async () => {
+        try {
+            const counts: Record<OrderStatus, number> = {} as any;
+            for (const tab of TABS) {
+                const response = await getOrdersByStatus(tab.id);
+                counts[tab.id] = Array.isArray(response.data) ? response.data.length : 0;
+            }
+            setOrderCounts(counts);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to fetch order counts.");
         }
     }, []);
-
+ 
     const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
         try {
-            toast.loading(`Updating order ${orderId} status to ${newStatus}...`, { id: 'status-update' });
+            toast.loading(`Updating order ${orderId}...`, { id: 'status-update' });
             await updateOrderStatus(orderId, newStatus);
             toast.success(`Order status updated to ${newStatus}`, { id: 'status-update' });
-            // Remove the order from the current list immediately for smooth transition
-            setOrders((prev) => prev.filter((o) => o.id !== orderId));
-
-            // Optional: Re-fetch the current tab's orders after a small delay to ensure all updates are reflected
-            // setTimeout(() => fetchOrders(activeTab), 500);
-
+ 
+            const updatedOrder = orders.find(o => o.id === orderId);
+            setOrders(prev => prev.filter(o => o.id !== orderId));
+            if (updatedOrder) setOrderCounts(prev => ({ ...prev, [updatedOrder.status]: (prev[updatedOrder.status] || 1) - 1, [newStatus]: (prev[newStatus] || 0) + 1 }));
         } catch (error) {
-            console.error("Failed to update status", error);
+            console.error(error);
             toast.error("Failed to update status", { id: 'status-update' });
         }
     };
-
-    useEffect(() => {
-        fetchOrders(activeTab);
-    }, [activeTab, fetchOrders]);
-
+ 
+    useEffect(() => { fetchOrders(activeTab); fetchOrderCounts(); }, [activeTab, fetchOrders, fetchOrderCounts]);
+ 
     const filteredOrders = useMemo(() => {
         if (!searchQuery) return orders;
-
-        const query = searchQuery.toLowerCase();
-        return orders.filter(
-            (order) =>
-                order.customerName?.toLowerCase().includes(query) ||
-                order.orderNumber.toLowerCase().includes(query) ||
-                order.id.toLowerCase().includes(query)
-        );
+        const q = searchQuery.toLowerCase();
+        return orders.filter(o => o.customerName?.toLowerCase().includes(q) || o.orderNumber.toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
     }, [orders, searchQuery]);
-
+ 
     const activeTabData = TABS.find(t => t.id === activeTab);
-
+ 
     return (
         <div className="min-h-screen bg-gray-50 pb-12 pt-20">
-            {/* Sticky Header with Stats and Tabs */}
+            {/* Header & Tabs */}
             <div className="w-full bg-white border-b border-gray-100 shadow-lg sticky top-0 md:top-16 z-20">
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-                    {/* Top Dashboard Stats Area */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-6">
-                        <StatCard
-                            icon={<Activity className="text-white" size={20} />}
-                            label="Live Orders"
-                            value={filteredOrders.length.toString()}
-                            trend="2 min average preparation"
-                            color="from-red-500 to-red-600"
-                        />
-                        <StatCard
-                            icon={<DollarSign className="text-white" size={20} />}
-                            label="Today's Revenue"
-                            value="₹ 45,230"
-                            trend="Target met by 80%"
-                            color="from-green-500 to-green-600"
-                        />
-                        <StatCard
-                            icon={<Users className="text-white" size={20} />}
-                            label="New Customers"
-                            value="128"
-                            trend="45% Repeat Rate"
-                            color="from-yellow-500 to-yellow-600"
-                        />
-                        <StatCard
-                            icon={<Truck className="text-white" size={20} />}
-                            label="Avg. Delivery Time"
-                            value="28 min"
-                            trend="3 min faster than last week"
-                            color="from-indigo-500 to-indigo-600"
-                        />
+                        <StatCard icon={<Activity className="text-white" size={20} />} label="Live Orders" value={filteredOrders.length.toString()} trend="2 min avg prep" color="from-red-500 to-red-600" />
+                        <StatCard icon={<DollarSign className="text-white" size={20} />} label="Today's Revenue" value="₹45,230" trend="Target 80%" color="from-green-500 to-green-600" />
+                        <StatCard icon={<Users className="text-white" size={20} />} label="New Customers" value="128" trend="45% Repeat" color="from-yellow-500 to-yellow-600" />
+                        <StatCard icon={<Truck className="text-white" size={20} />} label="Avg Delivery" value="28 min" trend="3 min faster" color="from-indigo-500 to-indigo-600" />
                     </div>
-                </div>
-
-                {/* Tabs Container */}
-                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+ 
                     <div className="overflow-x-auto pb-0.5 scrollbar-hide border-t border-gray-100">
                         <div className="flex w-max">
-                            {TABS.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`
-                                        relative flex items-center gap-2.5 px-6 py-4 font-semibold text-sm transition-all duration-300
-                                        ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
-                                    `}
-                                >
-                                    <span className={`flex items-center justify-center w-6 h-6 rounded-full ${activeTab === tab.id ? tab.color : 'bg-gray-100 text-gray-500'}`}>
-                                        {tab.icon}
-                                    </span>
+                            {TABS.map(tab => (
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center gap-2.5 px-6 py-4 font-semibold text-sm transition-all duration-300 ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                                    <span className={`flex items-center justify-center w-6 h-6 rounded-full ${activeTab === tab.id ? tab.color : 'bg-gray-100 text-gray-500'}`}>{tab.icon}</span>
                                     {tab.label}
                                     <span className={`ml-1 px-2 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-red-500/90 text-white' : 'bg-gray-100 text-gray-700'} text-xs font-bold`}>
-                                        {orders.filter(o => o.status === tab.id).length}
+                                        {orderCounts[tab.id] ?? 0}
                                     </span>
-                                    {activeTab === tab.id && (
-                                        <motion.div
-                                            layoutId="activeTabUnderline"
-                                            className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full bg-red-500 shadow-red-300/50 shadow-inner"
-                                            initial={false}
-                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                        />
-                                    )}
+                                    {activeTab === tab.id && <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full bg-red-500" />}
                                 </button>
                             ))}
                         </div>
                     </div>
                 </div>
             </div>
-
-            {/* Main Content Area */}
+ 
+            {/* Main Content */}
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Search and Filters */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <div className="flex items-center gap-2">
                         <h2 className="text-xl font-bold text-gray-800 tracking-tight">{activeTabData?.label}</h2>
-                        <span className={`px-3 py-1 rounded-full ${activeTabData?.color} text-sm font-semibold`}>
-                            {filteredOrders.length} Orders
-                        </span>
+                        <span className={`px-3 py-1 rounded-full ${activeTabData?.color} text-sm font-semibold`}>{filteredOrders.length} Orders</span>
                     </div>
-
-                    {/* Search Bar with updated styling */}
                     <div className="relative group w-full md:w-80">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-red-500 transition-colors" />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Search Order ID or Customer..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
-                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-5 w-5 text-gray-400 group-focus-within:text-red-500 transition-colors" /></div>
+                        <input type="text" placeholder="Search Order ID or Customer..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 shadow-sm" />
                         <button className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 transition-colors" onClick={() => setSearchQuery("")}>
                             {searchQuery ? <XCircle size={18} /> : <Filter size={18} />}
                         </button>
                     </div>
                 </div>
-
-                {/* Orders Grid/Loading/Empty State */}
+ 
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                            <div key={i} className="h-72 bg-white rounded-xl border border-gray-100 shadow-sm animate-pulse"></div>
-                        ))}
+                        {[...Array(8)].map((_, i) => <div key={i} className="h-72 bg-white rounded-xl border border-gray-100 shadow-sm animate-pulse"></div>)}
                     </div>
                 ) : filteredOrders.length === 0 ? (
                     <EmptyState activeTab={activeTab} searchQuery={searchQuery} />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence mode="popLayout">
-                            {filteredOrders.map((order) => (
-                                <OrderCard key={order.id} order={order} onStatusUpdate={handleStatusUpdate} />
-                            ))}
+                            {filteredOrders.map(order => <OrderCard key={order.id} order={order} onStatusUpdate={handleStatusUpdate} />)}
                         </AnimatePresence>
                     </div>
                 )}
@@ -256,10 +158,8 @@ const AdminOrderScreen: React.FC = () => {
         </div>
     );
 };
-
-// --- Sub-Components ---
-
-// 1. StatCard Component (More vibrant colors)
+ 
+// --- Subcomponents ---
 const StatCard = ({ icon, label, value, trend, color }: any) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition-shadow">
         <div className="flex items-start justify-between">
@@ -267,20 +167,16 @@ const StatCard = ({ icon, label, value, trend, color }: any) => (
                 <p className="text-gray-500 text-sm font-medium">{label}</p>
                 <h4 className="text-3xl font-bold text-gray-900 mt-1">{value}</h4>
             </div>
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg shadow-gray-200`}>
-                {icon}
-            </div>
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg shadow-gray-200`}>{icon}</div>
         </div>
-        <p className="text-gray-500 text-xs font-medium mt-3 flex items-center gap-1">
-            <TrendingUp size={12} className="text-green-500" /> {trend}
-        </p>
+        <p className="text-gray-500 text-xs font-medium mt-3 flex items-center gap-1"><TrendingUp size={12} className="text-green-500" />{trend}</p>
     </div>
 );
-
+ 
 // 2. OrderCard Component (Zomato-style focused information)
 const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (id: string, status: OrderStatus) => void }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+ 
     // Determines the next logical status for a quick action button
     const getNextStatus = (currentStatus: OrderStatus): { id: OrderStatus, label: string, color: string } | null => {
         switch (currentStatus) {
@@ -300,11 +196,11 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                 return null;
         }
     };
-
+ 
     const nextStatus = getNextStatus(order.status);
     const orderItemsCount = order.items.length;
     const currentTabInfo = TABS.find(t => t.id === order.status);
-
+ 
     return (
         <motion.div
             layout
@@ -334,7 +230,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     {currentTabInfo?.label}
                 </span>
             </div>
-
+ 
             {/* Body - Customer & Address */}
             <div className="p-5 flex-1 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-4">
@@ -346,7 +242,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                         <p className="text-sm text-gray-500">{order.customerPhone}</p>
                     </div>
                 </div>
-
+ 
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <MapPin size={16} className="text-red-500 mt-1 shrink-0" />
                     <div>
@@ -355,7 +251,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     </div>
                 </div>
             </div>
-
+ 
             {/* Items Summary & Total */}
             <div className="px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center justify-between mb-2">
@@ -382,7 +278,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     <p className="text-xl font-black text-red-600">₹{order.totalAmount}</p>
                 </div>
             </div>
-
+ 
             {/* Footer - Actions */}
             <div className="p-5 flex justify-between items-center gap-2">
                 {nextStatus ? (
@@ -396,7 +292,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                 ) : (
                     <span className="flex-1 text-center text-sm font-medium text-gray-500">Order Completed</span>
                 )}
-
+ 
                 {/* More Options Dropdown */}
                 <div className="relative">
                     <button
@@ -405,7 +301,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     >
                         <MoreVertical size={20} />
                     </button>
-
+ 
                     <AnimatePresence>
                         {isMenuOpen && (
                             <>
@@ -439,11 +335,11 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
         </motion.div>
     );
 }
-
+ 
 // 3. EmptyState Component (Improved visual feedback)
 const EmptyState = ({ activeTab, searchQuery }: { activeTab: OrderStatus, searchQuery: string }) => {
     const tabInfo = TABS.find(t => t.id === activeTab);
-
+ 
     return (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-300 shadow-inner mt-4">
             <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
@@ -458,14 +354,11 @@ const EmptyState = ({ activeTab, searchQuery }: { activeTab: OrderStatus, search
                     : `There are currently no orders that are in the ${tabInfo?.label.toLowerCase()} phase.`
                 }
             </p>
-            {!searchQuery && (
-                <p className="mt-4 text-sm font-medium text-red-500">
-                    Keep an eye on the **New Orders** tab!
-                </p>
-            )}
+ 
         </div>
     );
 }
-
-
+ 
+ 
 export default AdminOrderScreen;
+ 

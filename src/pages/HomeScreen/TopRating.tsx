@@ -172,7 +172,7 @@ const TopRating: React.FC = () => {
 
         {/* Horizontal Scrolling Products */}
         <div className="relative">
-          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+          <div className="flex gap-8 justify-center overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
             {filteredProducts.map((item, index) => (
               <motion.div
                 key={item.id}

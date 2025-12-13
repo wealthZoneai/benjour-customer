@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Pencil, Trash2, Grid3x3, List, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Grid3x3, List, Search } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../Redux/store";
 import CreateItemModal from "../../components/CreateItemModal";
@@ -9,6 +9,8 @@ import SubItemCard from "./SubItemCard";
 import SubItemHeader from "./SubItemHeader";
 import { getSubcategoryItems, createItem, updateItem, deleteItem, uploadBulkItems, fetchCaregotiesFilters } from "../../services/apiHelpers";
 import { toast } from "react-hot-toast";
+import ProductModal from "../SubCategory/ProductModal";
+
 
 
 // Updated product interface to match CreateItemModal fields
@@ -213,6 +215,7 @@ const GroceryItems: React.FC = () => {
         );
     }
 
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             {/* Header */}
@@ -408,111 +411,15 @@ const GroceryItems: React.FC = () => {
             </div>
 
             {/* PRODUCT DETAILS POPUP */}
-            <AnimatePresence>
-                {selectedProduct && (
-                    <>
-                        {/* Backdrop */}
-                        <motion.div
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setSelectedProduct(null)}
-                        >
-                            {/* Modal */}
-                            <motion.div
-                                className="bg-white rounded-3xl p-8 max-w-2xl w-full relative shadow-2xl"
-                                initial={{ scale: 0.9, y: 20 }}
-                                animate={{ scale: 1, y: 0 }}
-                                exit={{ scale: 0.9, y: 20 }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <button
-                                    onClick={() => setSelectedProduct(null)}
-                                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-colors"
-                                >
-                                    <X size={20} />
-                                </button>
+   {/* PRODUCT DETAILS POPUP */}
+<ProductModal
+  selectedProduct={selectedProduct}
+  onClose={() => setSelectedProduct(null)}
+  allProducts={items}
+  onSelectProduct={setSelectedProduct}
+/>
 
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    {/* Image */}
-                                    <div className="flex-shrink-0">
-                                        <img
-                                            src={selectedProduct.imageUrl}
-                                            className="w-full md:w-64 h-64 object-cover rounded-2xl"
-                                            alt={selectedProduct.name}
-                                        />
-                                    </div>
 
-                                    {/* Details */}
-                                    <div className="flex-1">
-                                        <div className="mb-3">
-                                            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                                                {selectedProduct.category}
-                                            </span>
-                                        </div>
-
-                                        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                                            {selectedProduct.name}
-                                        </h2>
-
-                                        {/* Rating */}
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="flex">
-                                                {Array.from({ length: 5 }).map((_, i) => (
-                                                    <span
-                                                        key={i}
-                                                        className={`text-lg ${i < selectedProduct.rating
-                                                            ? "text-yellow-400"
-                                                            : "text-gray-300"
-                                                            }`}
-                                                    >
-                                                        ★
-                                                    </span>
-                                                ))}
-                                            </div>
-                                            <span className="text-sm text-gray-600">
-                                                ({selectedProduct.rating}.0)
-                                            </span>
-                                        </div>
-
-                                        <p className="text-gray-600 mb-6 leading-relaxed">
-                                            {selectedProduct.description || "No description available."}
-                                        </p>
-
-                                        {/* Price */}
-                                        <div className="flex items-baseline gap-3 mb-6">
-                                            <span className="text-3xl font-bold text-emerald-600">
-                                                ₹{selectedProduct.price}
-                                            </span>
-                                            {selectedProduct.discount > 0 && (
-                                                <>
-                                                    <span className="text-lg text-gray-400 line-through">
-                                                        ₹{(selectedProduct.price * (1 + selectedProduct.discount / 100)).toFixed(0)}
-                                                    </span>
-                                                    <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
-                                                        {selectedProduct.discount}% OFF
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        <button
-                                            onClick={() => {
-                                                setSelectedProduct(null);
-                                                // Add to cart logic here
-                                            }}
-                                            className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-3 rounded-xl font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-md hover:shadow-lg"
-                                        >
-                                            Add to Cart
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
 
             {/* Create / Edit Item Modal */}
             <CreateItemModal
