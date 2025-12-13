@@ -11,7 +11,9 @@ import {
     ChevronRight,
     Calendar,
     ShoppingBag,
-    Star
+    Star,
+    UserCheck,
+    Store
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../Redux/store";
@@ -31,16 +33,12 @@ interface Order {
     id: string;
     orderNumber: string;
     date: string;
-    status: "pending" | "confirmed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
+    status: "PLACED" | "PREPARING" | "READY" | "ASSIGNED" | "PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED"
     items: OrderItem[];
     totalAmount: number;
     deliveryAddress: string;
     estimatedDelivery?: string;
-    trackingSteps: {
-        label: string;
-        time?: string;
-        completed: boolean;
-    }[];
+
 }
 
 const Orders: React.FC = () => {
@@ -55,11 +53,14 @@ const Orders: React.FC = () => {
 
     // API Data Integration
     useEffect(() => {
+        if (!userId) {
+            setLoading(false);
+            return;
+        }
+
         const fetchOrders = async () => {
             setLoading(true);
             try {
-                if (!userId) return;
-
                 const [currentOrderRes, allOrdersRes] = await Promise.all([
                     getCurrentOrder(userId).catch((err: any) => {
                         console.error("Error fetching current order:", err);
@@ -68,64 +69,66 @@ const Orders: React.FC = () => {
                     getAllOrders(userId).catch((err: any) => {
                         console.error("Error fetching all orders:", err);
                         return { data: [] };
-                    })
+                    }),
                 ]);
 
-                // Helper function to map API item to UI item
                 const mapApiItemToUiItem = (apiItem: any) => ({
-                    id: apiItem.item?.id || Math.random(),
+                    id: apiItem.item?.id || crypto.randomUUID(),
                     name: apiItem.item?.name || "Unknown Item",
                     quantity: apiItem.quantity || 1,
                     price: apiItem.item?.price || 0,
-                    image: apiItem.item?.imageUrl || "https://via.placeholder.com/100"
+                    image: apiItem.item?.imageUrl || "https://via.placeholder.com/100",
                 });
 
-                // Helper to create order object from API data
-                const mapToOrder = (data: any, statusOverride?: Order["status"]): Order => {
-                    // Ensure we have an array of items
-                    const items = data.orderItems ? data.orderItems.map(mapApiItemToUiItem) : [mapApiItemToUiItem(data)];
-                    // Calculate total if not provided
-                    const totalByItems = items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
+                const mapToOrder = (
+                    data: any,
+                    statusOverride?: Order["status"]
+                ): Order => {
+                    const items = data.orderItems
+                        ? data.orderItems.map(mapApiItemToUiItem)
+                        : [mapApiItemToUiItem(data)];
+
+                    const totalByItems = items.reduce(
+                        (acc: number, item: any) => acc + item.price * item.quantity,
+                        0
+                    );
 
                     return {
-                        id: data.id?.toString() || Math.random().toString(),
-                        orderNumber: `ORD-${data.id || Math.random().toString().substr(2, 6)}`,
-                        date: new Date().toISOString(), // API doesn't seem to return date in snippets, using current for now or need to check full response
-                        status: statusOverride || "pending", // Default to pending if logic not applied
+                        id: data.id?.toString() || crypto.randomUUID(),
+                        orderNumber: `ORD-${data.id ?? crypto.randomUUID().slice(0, 6)}`,
+                        date: data.orderDate || new Date().toISOString(),
+                        status: statusOverride || data.status || "PLACED",
                         totalAmount: data.totalAmount || totalByItems,
-                        deliveryAddress: "Default Address", // API missing address in snippets
-                        items: items,
-                        trackingSteps: [
-                            { label: "Order Placed", completed: true },
-                            { label: "Order Confirmed", completed: true },
-                            { label: "Out for Delivery", completed: false },
-                            { label: "Delivered", completed: false }
-                        ]
+                        deliveryAddress: data.deliveryAddress || "Default Address",
+                        items,
                     };
                 };
 
                 let formattedOrders: Order[] = [];
 
-                // Process Current Orders
-                // The snippet shows 'currentorder' returning a single item structure or list. 
-                // Assuming it might be a list of active orders.
                 const currentData = currentOrderRes.data;
                 if (Array.isArray(currentData)) {
-                    formattedOrders = [...formattedOrders, ...currentData.map((o: any) => mapToOrder(o, "out_for_delivery"))];
-                } else if (currentData && typeof currentData === 'object') {
-                    formattedOrders.push(mapToOrder(currentData, "out_for_delivery"));
+                    formattedOrders.push(
+                        ...currentData.map((o: any) =>
+                            mapToOrder(o)
+                        )
+                    );
+                } else if (currentData) {
+                    formattedOrders.push(mapToOrder(currentData));
                 }
 
                 const allData = allOrdersRes.data;
                 if (Array.isArray(allData)) {
-                    formattedOrders = [...formattedOrders, ...allData.map((o: any) => mapToOrder(o, "delivered"))];
-                } else if (allData && typeof allData === 'object') {
-                    formattedOrders.push(mapToOrder(allData, "delivered"));
+                    formattedOrders.push(
+                        ...allData.map((o: any) =>
+                            mapToOrder(o)
+                        )
+                    );
+                } else if (allData) {
+                    formattedOrders.push(mapToOrder(allData));
                 }
 
-                // Deduplicate if needed or just set
                 setOrders(formattedOrders);
-
             } catch (error) {
                 console.error("Error fetching orders:", error);
                 toast.error("Failed to load orders");
@@ -134,14 +137,12 @@ const Orders: React.FC = () => {
             }
         };
 
-        if (userId) {
-            fetchOrders();
-        }
+        fetchOrders();
     }, [userId]);
+
 
     const handleReviewSubmit = async (reviewData: ReviewData) => {
         // TODO: Call API to submit review
-        console.log("Review submitted:", reviewData);
         const reviewRes = await submitReview(reviewData.itemId, reviewData);
         if (reviewRes.status === 200) {
             toast.success("Review submitted successfully");
@@ -158,50 +159,100 @@ const Orders: React.FC = () => {
 
     const getStatusColor = (status: Order["status"]) => {
         switch (status) {
-            case "pending":
+            case "PLACED":
                 return "bg-yellow-100 text-yellow-700 border-yellow-200";
-            case "confirmed":
-            case "preparing":
+
+            case "PREPARING":
+            case "READY":
                 return "bg-blue-100 text-blue-700 border-blue-200";
-            case "out_for_delivery":
+
+            case "ASSIGNED":
+            case "PICKUP":
                 return "bg-purple-100 text-purple-700 border-purple-200";
-            case "delivered":
+
+            case "OUT_FOR_DELIVERY":
+                return "bg-indigo-100 text-indigo-700 border-indigo-200";
+
+            case "DELIVERED":
                 return "bg-green-100 text-green-700 border-green-200";
-            case "cancelled":
-                return "bg-red-100 text-red-700 border-red-200";
+
             default:
                 return "bg-gray-100 text-gray-700 border-gray-200";
         }
     };
 
+
     const getStatusIcon = (status: Order["status"]) => {
         switch (status) {
-            case "pending":
+            case "PLACED":
                 return <Clock size={16} />;
-            case "confirmed":
-            case "preparing":
+
+            case "PREPARING":
+            case "READY":
                 return <Package size={16} />;
-            case "out_for_delivery":
+
+            case "ASSIGNED":
+                return <UserCheck size={16} />;
+
+            case "PICKUP":
+                return <Store size={16} />;
+
+            case "OUT_FOR_DELIVERY":
                 return <Truck size={16} />;
-            case "delivered":
+
+            case "DELIVERED":
                 return <CheckCircle size={16} />;
-            case "cancelled":
-                return <XCircle size={16} />;
+
             default:
                 return <Package size={16} />;
         }
     };
+
 
     const getStatusText = (status: Order["status"]) => {
         return status.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
     };
 
     const ongoingOrders = orders.filter(
-        (order) => !["delivered", "cancelled"].includes(order.status)
+        (order) => order.status !== "DELIVERED"
     );
-    const pastOrders = orders.filter((order) =>
-        ["delivered", "cancelled"].includes(order.status)
+
+    const pastOrders = orders.filter(
+        (order) => order.status === "DELIVERED"
     );
+
+
+    const ORDER_TRACKING_FLOW: {
+        status: Order["status"];
+        label: string;
+    }[] = [
+            { status: "PLACED", label: "Order Placed" },
+            { status: "PREPARING", label: "Preparing Order" },
+            { status: "READY", label: "Order Ready" },
+            { status: "ASSIGNED", label: "Delivery Partner Assigned" },
+            { status: "PICKUP", label: "Picked Up" },
+            { status: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
+            { status: "DELIVERED", label: "Delivered" },
+        ];
+
+    const getTrackingSteps = (status: Order["status"]) => {
+        const currentIndex = ORDER_TRACKING_FLOW.findIndex(
+            (step) => step.status === status
+        );
+
+        return ORDER_TRACKING_FLOW.map((step, index) => ({
+            ...step,
+            completed: index <= currentIndex,
+            time: index <= currentIndex ? "Completed" : null, // optional
+        }));
+    };
+
+
+    const trackingSteps = selectedOrder
+        ? getTrackingSteps(selectedOrder.status)
+        : [];
+
+
 
     const displayOrders = activeTab === "ongoing" ? ongoingOrders : pastOrders;
 
@@ -298,7 +349,7 @@ const Orders: React.FC = () => {
                                     </div>
 
                                     {/* Estimated Delivery for Ongoing Orders */}
-                                    {order.estimatedDelivery && order.status === "out_for_delivery" && (
+                                    {order.estimatedDelivery && order.status === "OUT_FOR_DELIVERY" && (
                                         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4">
                                             <div className="flex items-center gap-2 text-emerald-700">
                                                 <Truck size={18} className="animate-pulse" />
@@ -331,7 +382,7 @@ const Orders: React.FC = () => {
                                                         ₹{item.quantity * item.price}
                                                     </p>
                                                     {/* Rate Item Button for Delivered Orders */}
-                                                    {order.status === "delivered" && (
+                                                    {order.status === "DELIVERED" && (
                                                         <button
                                                             onClick={() => openReviewModal(item)}
                                                             className="flex items-center gap-1 px-3 py-1.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg text-yellow-700 text-xs font-medium transition-colors"
@@ -369,6 +420,7 @@ const Orders: React.FC = () => {
             </div>
 
             {/* Order Tracking Modal */}
+
             <AnimatePresence>
                 {selectedOrder && (
                     <>
@@ -420,15 +472,16 @@ const Orders: React.FC = () => {
                                 {/* Tracking Steps */}
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-gray-800 mb-4">Order Status</h3>
+
                                     <div className="space-y-4">
-                                        {selectedOrder.trackingSteps.map((step: any, index: number) => (
-                                            <div key={index} className="flex gap-4">
+                                        {trackingSteps.map((step, index) => (
+                                            <div key={step.status} className="flex gap-4">
                                                 {/* Timeline */}
                                                 <div className="flex flex-col items-center">
                                                     <div
                                                         className={`w-10 h-10 rounded-full flex items-center justify-center ${step.completed
-                                                            ? "bg-emerald-600 text-white"
-                                                            : "bg-gray-200 text-gray-400"
+                                                                ? "bg-emerald-600 text-white"
+                                                                : "bg-gray-200 text-gray-400"
                                                             }`}
                                                     >
                                                         {step.completed ? (
@@ -437,7 +490,8 @@ const Orders: React.FC = () => {
                                                             <Clock size={20} />
                                                         )}
                                                     </div>
-                                                    {index < selectedOrder.trackingSteps.length - 1 && (
+
+                                                    {index < trackingSteps.length - 1 && (
                                                         <div
                                                             className={`w-0.5 h-12 ${step.completed ? "bg-emerald-600" : "bg-gray-200"
                                                                 }`}
@@ -453,8 +507,10 @@ const Orders: React.FC = () => {
                                                     >
                                                         {step.label}
                                                     </p>
-                                                    {step.time && (
-                                                        <p className="text-sm text-gray-500 mt-1">{step.time}</p>
+                                                    {step.completed && (
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            Completed
+                                                        </p>
                                                     )}
                                                 </div>
                                             </div>
@@ -471,7 +527,7 @@ const Orders: React.FC = () => {
                                                 Delivery Address
                                             </p>
                                             <p className="text-sm text-gray-600">
-                                                {selectedOrder.deliveryAddress}
+                                                {selectedOrder?.deliveryAddress}
                                             </p>
                                         </div>
                                     </div>
@@ -486,16 +542,19 @@ const Orders: React.FC = () => {
                                                 Need Help?
                                             </p>
                                             <p className="text-sm text-gray-600">
-                                                Contact support: <span className="font-semibold">1800-123-4567</span>
+                                                Contact support:{" "}
+                                                <span className="font-semibold">1800-123-4567</span>
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                         </motion.div>
                     </>
                 )}
             </AnimatePresence>
+
 
             {/* Review Modal */}
             {selectedItemForReview && (

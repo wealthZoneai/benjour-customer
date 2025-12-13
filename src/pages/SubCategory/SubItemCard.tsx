@@ -29,7 +29,7 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
   name,
   image,
   category,
-  price,
+  price,  
   discount = 5,
   rating = 4,
   minValue = 1,
@@ -115,8 +115,18 @@ const [quantity, setQuantity] = React.useState(min);
         toast.error("Failed to add item to cart");
         return;
       }
+      // ✅ Find the cart item for this product
+    const cartItem = response.data.cartItems.find(
+      (ci: any) => ci.item.id === id
+    );
 
-      dispatch(addToCart({ id, name, image, price, quantity, discount,minValue,maxValue,unitType }));
+    if (!cartItem) {
+      toast.error("Cart item not found");
+      return;
+    }
+
+
+      dispatch(addToCart({ cartItemId: cartItem.id, id, name, image, price, quantity, discount,minValue,maxValue,unitType }));
       toast.success(`${name} added to cart 🛒`);
       setQuantity(minValue);
     } catch (error) {

@@ -2,17 +2,16 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 export interface CartItem {
+  cartItemId: number;
   id: number;
   name: string;
   price: number;
   image: string;
   quantity: number;
   discount: number;
-
-  unitType: string | null;   // FIXED
-  minValue: number | null;   // FIXED
-  maxValue: number | null;   // FIXED
-  // stepValue: number | null;  // FIXED
+  unitType: string | null;
+  minValue: number | null;
+  maxValue: number | null;
 }
 
 
@@ -35,40 +34,31 @@ const cartSlice = createSlice({
     },
 
     // ✅ Add single item (local add-to-cart)
+    // ✅ Add / merge
     addToCart: (state, action: PayloadAction<CartItem>) => {
       const payload = action.payload;
 
-      const existing = state.items.find((i) => i.id === payload.id);
+      const existing = state.items.find(
+        (i) => i.cartItemId === payload.cartItemId
+      );
 
       if (existing) {
-        existing.quantity += payload.quantity || 1;
+        existing.quantity += payload.quantity;
       } else {
-        state.items.push({
-          id: payload.id,
-          name: payload.name,
-          price: payload.price,
-          image: payload.image,
-
-          // ADD THIS ↓↓↓
-          discount: payload.discount ?? 0,
-
-          // Dynamic unit values
-          unitType: payload.unitType ?? null,
-          minValue: payload.minValue ?? 1,
-          maxValue: payload.maxValue ?? 50,
-
-          // quantity
-          quantity: payload.quantity || payload.minValue || 1,
-        });
+        state.items.push(payload);
       }
     },
 
 
 
+
     // ❌ Remove one item
     removeFromCart: (state, action: PayloadAction<number>) => {
-      state.items = state.items.filter((i) => i.id !== action.payload);
+      state.items = state.items.filter(
+        (i) => i.cartItemId !== action.payload
+      );
     },
+
 
     // ❌ Empty cart
     clearCart: (state) => {
@@ -78,43 +68,51 @@ const cartSlice = createSlice({
     // ❌ Update quantity to new value
     updateQuantity: (
       state,
-      action: PayloadAction<{ id: number; quantity: number }>
+      action: PayloadAction<{ cartItemId: number; quantity: number }>
     ) => {
-      const item = state.items.find((i) => i.id === action.payload.id);
+      const item = state.items.find(
+        (i) => i.cartItemId === action.payload.cartItemId
+      );
       if (item) item.quantity = action.payload.quantity;
     },
+
 
     // ➕ Increase quantity (dynamic step)
     increaseQuantity: (
       state,
-      action: PayloadAction<{ id: number; amount: number }>
+      action: PayloadAction<{ cartItemId: number; amount: number }>
     ) => {
-      const { id, amount } = action.payload;
-      const item = state.items.find((i) => i.id === id);
+      const { cartItemId, amount } = action.payload;
+      const item = state.items.find(
+        (i) => i.cartItemId === cartItemId
+      );
 
-      if (item) {
-        item.quantity = item.quantity + amount;
-      }
+      if (item) item.quantity += amount;
     },
+
 
     decreaseQuantity: (
       state,
-      action: PayloadAction<{ id: number; amount: number; min: number }>
+      action: PayloadAction<{ cartItemId: number; amount: number; min: number }>
     ) => {
-      const { id, amount, min } = action.payload;
-      const item = state.items.find((i) => i.id === id);
+      const { cartItemId, amount, min } = action.payload;
+      const item = state.items.find(
+        (i) => i.cartItemId === cartItemId
+      );
 
       if (!item) return;
 
       const newQty = item.quantity - amount;
 
-      // Remove only when newQty < min (strictly less)
       if (newQty < min) {
-        state.items = state.items.filter((i) => i.id !== id);
+        state.items = state.items.filter(
+          (i) => i.cartItemId !== cartItemId
+        );
       } else {
         item.quantity = newQty;
       }
     },
+
 
 
   },

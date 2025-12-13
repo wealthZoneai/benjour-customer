@@ -23,7 +23,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
   const dispatch = useDispatch();
 
   const cart = useSelector((state: RootState) => state.cart.items);
-  console.log(cart);
   const { userId, role } = useSelector((state: RootState) => state.user);
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
 
@@ -60,6 +59,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
         const items = cartData.cartItems || (Array.isArray(cartData) ? cartData : []);
 
         const formattedItems = items.map((cartItem: any) => ({
+          cartItemId: cartItem.id,
           id: cartItem.item.id,
           name: cartItem.item.name,
           price: cartItem.item.price,

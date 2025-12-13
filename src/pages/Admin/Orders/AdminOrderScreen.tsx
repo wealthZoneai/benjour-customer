@@ -108,7 +108,7 @@ const AdminOrderScreen: React.FC = () => {
                         <StatCard icon={<Truck className="text-white" size={20} />} label="Avg Delivery" value="28 min" trend="3 min faster" color="from-indigo-500 to-indigo-600" />
                     </div>
  
-                    <div className="overflow-x-auto pb-0.5 scrollbar-hide border-t border-gray-100">
+                    <div className="overflow-x-auto pb-0.5 no-scrollbar border-t border-gray-100">
                         <div className="flex w-max">
                             {TABS.map(tab => (
                                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center gap-2.5 px-6 py-4 font-semibold text-sm transition-all duration-300 ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>

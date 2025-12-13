@@ -1,28 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingCart } from "lucide-react";
+import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../../Redux/store";
+import { AddToCart } from "../../services/apiHelpers";
+import { addToCart } from "../../Redux/cartSlice";
 
 /* ===================== TYPES ===================== */
 
 export interface Product {
-  id: number;
-  subCategoryId: number;
-  name: string;
-  price: number;
-  discount: number;
-  rating: number;
-  description: string;
-  isFavorite: boolean;
-  imageUrl: string;
-  category: string;
-  minValue: number;
-  maxValue: number;
-  stepValue: number;
-  unitType: string;
+    id: any;
+    subCategoryId: number;
+    name: string;
+    price: number;
+    discount: number;
+    rating: number;
+    description: string;
+    isFavorite: boolean;
+    imageUrl: string;
+    category: string;
+    minValue: number;
+    maxValue: number;
+    // stepValue: number;
+    unitType: string;
 }
 
 interface Review {
-  id: number;
+  id: any;
   userName: string;
   rating: number;
   comment: string;
@@ -36,21 +41,33 @@ interface ProductModalProps {
   reviews?: Review[];
 }
 
-/* ===================== COMPONENT ===================== */
 
 const ProductModal: React.FC<ProductModalProps> = ({
   selectedProduct,
   onClose,
   allProducts,
   onSelectProduct,
-  reviews = []
+  reviews = [],
 }) => {
-  const [isAdding, setIsAdding] = useState(false);
+  const dispatch = useDispatch();
+  const userId = useSelector((state: RootState) => state.user.userId);
 
+  // ✅ Hooks ALWAYS run
+  const [isAdding, setIsAdding] = useState(false);
+  const [quantity, setQuantity] = useState<number>(1);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      setQuantity(selectedProduct.minValue || 1);
+    }
+  }, [selectedProduct]);
+
+  // ✅ Safe early return AFTER hooks
   if (!selectedProduct) return null;
 
-  /* UNIT FORMAT */
-  const unitLabel = selectedProduct.unitType
+
+
+  const unitLabel = (selectedProduct.unitType ?? "")
     .replace("LITRE", "L")
     .replace("MILLILITER", "ml")
     .replace("KILOGRAM", "kg")
@@ -58,32 +75,72 @@ const ProductModal: React.FC<ProductModalProps> = ({
     .replace("PIECE", "pc")
     .replace("PACKET", "pkt");
 
-  /* RELATED PRODUCTS */
+  /* ===================== RELATED PRODUCTS ===================== */
+
   const relatedProducts = allProducts.filter(
     (p) =>
       p.subCategoryId === selectedProduct.subCategoryId &&
       p.id !== selectedProduct.id
   );
 
-  /* ADD TO CART → CLOSE MODAL */
+  /* ===================== ADD TO CART ===================== */
+
   const handleAddToCart = async () => {
+    if (!userId) {
+      toast.error("Please login before adding items to cart");
+      return;
+    }
+
+    if (quantity < (selectedProduct.minValue ?? 1)) {
+      toast.error(
+        `Minimum quantity is ${selectedProduct.minValue} ${unitLabel}`
+      );
+      return;
+    }
+
     setIsAdding(true);
 
-    // Simulate API / Redux
-    await new Promise((res) => setTimeout(res, 800));
+    try {
+      const response = await AddToCart(
+        userId,
+        selectedProduct.id,
+        quantity
+      );
 
-    console.log("Added to cart:", selectedProduct);
+      if (!response?.data) {
+        toast.error("Failed to add item to cart");
+        return;
+      }
 
-    setIsAdding(false);
+      // dispatch(
+      //   addToCart({
+      //     cartItemId: response.data.cartItems[0].id,
+      //     id: selectedProduct.id,
+      //     name: selectedProduct.name,
+      //     image: selectedProduct.imageUrl,
+      //     price: selectedProduct.price,
+      //     quantity,
+      //     discount: selectedProduct.discount ?? 0,
+      //     minValue: selectedProduct.minValue ?? 1,
+      //     maxValue: selectedProduct.maxValue ?? 1,
+      //     unitType: selectedProduct.unitType ?? "",
+      //   })
+      // );
 
-    // ✅ AUTO CLOSE MODAL
-    onClose();
+      toast.success(`${selectedProduct.name} added to cart 🛒`);
+      onClose();
+    } catch (error) {
+      console.error("Cart API Error:", error);
+      toast.error("Something went wrong while adding item");
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed no-scrollbar inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         onClick={onClose}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -91,13 +148,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl
-                     relative flex flex-col max-h-[90vh]"
+          className="bg-white rounded-3xl max-w-3xl w-full no-scrollbar shadow-2xl relative flex flex-col max-h-[90vh]"
           initial={{ scale: 0.9, y: 30 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 30 }}
         >
-          {/* CLOSE BUTTON */}
+          {/* CLOSE */}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 p-2 rounded-full"
@@ -105,9 +161,8 @@ const ProductModal: React.FC<ProductModalProps> = ({
             <X size={20} />
           </button>
 
-          {/* SCROLLABLE CONTENT */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-
+          {/* CONTENT */}
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
             {/* PRODUCT INFO */}
             <div className="flex flex-col md:flex-row gap-6">
               <img
@@ -131,7 +186,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     <span
                       key={i}
                       className={`text-lg ${
-                        i < selectedProduct.rating
+                        i < (selectedProduct.rating ?? 0)
                           ? "text-yellow-400"
                           : "text-gray-300"
                       }`}
@@ -142,15 +197,22 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 </div>
 
                 {/* DESCRIPTION */}
-                <p className="text-gray-600 mt-4 text-sm leading-relaxed">
-                  {selectedProduct.description || "No description available."}
+                <p className="text-gray-600 mt-4 text-sm">
+                  {selectedProduct.description ||
+                    "No description available."}
                 </p>
 
                 {/* EXTRA INFO */}
                 <div className="mt-4 text-sm space-y-1">
-                  <p><b>Unit:</b> {unitLabel}</p>
-                  <p><b>Min Qty:</b> {selectedProduct.minValue}</p>
-                  <p><b>Max Qty:</b> {selectedProduct.maxValue}</p>
+                  <p>
+                    <b>Unit:</b> {unitLabel}
+                  </p>
+                  <p>
+                    <b>Min Qty:</b> {selectedProduct.minValue}
+                  </p>
+                  <p>
+                    <b>Max Qty:</b> {selectedProduct.maxValue}
+                  </p>
                 </div>
 
                 {/* PRICE */}
@@ -159,12 +221,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     ₹{selectedProduct.price}
                   </span>
 
-                  {selectedProduct.discount > 0 && (
+                  {(selectedProduct.discount ?? 0) > 0 && (
                     <>
                       <span className="text-gray-400 line-through">
-                        ₹{(
+                        ₹
+                        {(
                           selectedProduct.price *
-                          (1 + selectedProduct.discount / 100)
+                          (1 + (selectedProduct.discount ?? 0) / 100)
                         ).toFixed(0)}
                       </span>
                       <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
@@ -178,28 +241,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 <button
                   onClick={handleAddToCart}
                   disabled={isAdding}
-                  className="w-full mt-6 bg-gradient-to-r from-emerald-600 to-emerald-700
-                             text-white py-2.5 rounded-xl font-semibold
-                             hover:from-emerald-700 hover:to-emerald-800
-                             transition-all shadow-md hover:shadow-lg
-                             flex items-center justify-center gap-2
-                             disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {isAdding ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                      />
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart size={16} />
-                      Add to Cart
-                    </>
-                  )}
+                  {isAdding ? "Adding..." : <><ShoppingCart size={16} /> Add to Cart</>}
                 </button>
               </div>
             </div>
@@ -210,13 +254,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 <h3 className="text-lg font-semibold mb-3">
                   Related Products
                 </h3>
-
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="flex gap-4 overflow-x-auto">
                   {relatedProducts.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => onSelectProduct(item)}
-                      className="min-w-[160px] cursor-pointer bg-gray-50 hover:bg-gray-100 p-3 rounded-xl transition"
+                      className="min-w-[160px] cursor-pointer bg-gray-50 hover:bg-gray-100 p-3 rounded-xl"
                     >
                       <img
                         src={item.imageUrl}
@@ -235,38 +278,18 @@ const ProductModal: React.FC<ProductModalProps> = ({
               </div>
             )}
 
-            {/* CUSTOMER REVIEWS */}
+            {/* REVIEWS */}
             <div>
               <h3 className="text-lg font-semibold mb-3">
                 Customer Reviews
               </h3>
-
               {reviews.length === 0 ? (
                 <p className="text-sm text-gray-500">No reviews yet.</p>
               ) : (
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="bg-gray-50 p-4 rounded-xl"
-                    >
-                      <div className="flex justify-between mb-1">
-                        <p className="font-medium">{review.userName}</p>
-                        <div className="flex">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span
-                              key={i}
-                              className={`text-sm ${
-                                i < review.rating
-                                  ? "text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                    <div key={review.id} className="bg-gray-50 p-4 rounded-xl">
+                      <p className="font-medium">{review.userName}</p>
                       <p className="text-sm text-gray-600">
                         {review.comment}
                       </p>
@@ -275,7 +298,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 </div>
               )}
             </div>
-
           </div>
         </motion.div>
       </motion.div>

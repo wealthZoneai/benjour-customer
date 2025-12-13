@@ -275,7 +275,6 @@ export function deleteFromCart(userId: any, itemId: any) {
 
 // update cart quantity
 export function updateCartQuantity(userId: any, itemId: number, quantity: number) {
-  console.log(userId, itemId, quantity);
   return server.put(
     `${endpoints.updateQuantity}${userId}&itemId=${itemId}&quantity=${quantity}`,
     {},
@@ -305,6 +304,13 @@ export function setFavoriteItem(itemId: string | number, isFavorite: boolean, us
 // Reviews
 export function submitReview(itemId: number, reviewData: ReviewData) {
   return server.post(`${endpoints.submitReview}${itemId}`, reviewData, { requiresAuth: true });
+}
+
+
+// Retings Status
+
+export const getRatingsStatus = (userId: string, orderId:string) => {
+  return server.get(`${endpoints.getRatingsStatus}${userId}&orderId=${orderId}`, { requiresAuth: true });
 }
 
 // Home Screen Helpers

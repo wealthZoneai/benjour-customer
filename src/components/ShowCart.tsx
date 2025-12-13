@@ -26,6 +26,7 @@ import {
 import type { RootState } from "../Redux/store";
 
 interface CartItem {
+    cartItemId: number;
     id: number;
     name: string;
     price: number;
@@ -57,7 +58,6 @@ const ShowCart: React.FC<ShowCartProps> = ({
     const userId = useSelector((state: RootState) => state.user.userId);
 
     const [isCheckingOut, setIsCheckingOut] = useState(false);
-    console.log(cart);
     // -------------------------------------------------------------
     // REMOVE ITEM FROM CART
     // -------------------------------------------------------------
@@ -85,13 +85,13 @@ const ShowCart: React.FC<ShowCartProps> = ({
         const newQuantity = Math.min(max, item.quantity + 1);
 
         // ensure id type matches reducer (number)
-        dispatch(increaseQuantity({ id: Number(item.id), amount: 1 }));
+        dispatch(increaseQuantity({ cartItemId: Number(item.cartItemId), amount: 1 }));
 
         try {
-            await updateCartQuantity(userId, Number(item.id), newQuantity);
+            await updateCartQuantity(userId, Number(item.cartItemId), newQuantity);
         } catch (error) {
             // rollback exactly the same amount
-            // dispatch(decreaseQuantity({ id: Number(item.id), amount: 1, min }));
+            dispatch(decreaseQuantity({ cartItemId: Number(item.cartItemId), amount: 1, min }));
             toast.error("Failed to update quantity");
         }
     };
@@ -100,23 +100,22 @@ const ShowCart: React.FC<ShowCartProps> = ({
     const handleDecreaseQuantity = async (item: CartItem) => {
         const min = item.minValue ?? 1;
 
-        // remove only if the next quantity would be less than min
         if (item.quantity - 1 < min) {
-            handleRemoveFromCart(Number(item.id));
+            handleRemoveFromCart(Number(item.cartItemId));
             return;
         }
 
         const newQuantity = Math.max(min, item.quantity - 1);
 
-        dispatch(decreaseQuantity({ id: Number(item.id), amount: 1, min }));
+        dispatch(decreaseQuantity({ cartItemId: Number(item.cartItemId), amount: 1, min }));
 
-        // try {
-        //     await updateCartQuantity(userId, Number(item.id), newQuantity);
-        // } catch (error) {
-        //     // rollback
-        //     dispatch(increaseQuantity({ id: Number(item.id), amount: 1 }));
-        //     toast.error("Failed to update quantity");
-        // }
+        try {
+            await updateCartQuantity(userId, Number(item.cartItemId), newQuantity);
+        } catch (error) {
+            // rollback
+            dispatch(increaseQuantity({ cartItemId: Number(item.cartItemId), amount: 1 }));
+            toast.error("Failed to update quantity");
+        }
     };
 
 

@@ -6,7 +6,7 @@ const endpoints = {
 
     // Dynamic Categories (Main categories like Groceries, Alcohol, Drinks)
     getCurrentOrder: 'api/profile/currentorder/',
-    getAllOrders: 'api/profile/allorders/',
+    getAllOrders: 'api/profile/orderhistory/',
     getProfile: 'api/profile/getProfile?userId=',
     createProfile: 'api/profile/createProfile?userId=',
     updateProfile: 'api/profile/updateProfile?userId=',
@@ -47,6 +47,9 @@ const endpoints = {
 
     // Reviews
     submitReview: 'api/reviews/addReview?itemId=',
+
+    // Ratings Status
+    getRatingsStatus: 'api/profile/userstatus?userId=',
 
     // Home Screen Sections
     getHomeBanner: 'api/home/banner',

@@ -104,7 +104,6 @@ const CreateCategoryModal: React.FC<CategoryModalProps> = ({
       return;
     }
 
-    console.log(form);
 
     try {
       setIsSubmitting(true);

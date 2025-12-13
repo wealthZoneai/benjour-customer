@@ -148,7 +148,6 @@ const GroceryItems: React.FC = () => {
 
     // When creating OR updating item
     const handleSubmitItem = async (data: any) => {
-        console.log(data)
         try {
             if (editingItem) {
                 // Edit existing item
@@ -159,7 +158,7 @@ const GroceryItems: React.FC = () => {
                 await createItem(subcategoryId!, data);
                 toast.success("Item created successfully!");
             }
-            
+
             fetchItems(0);
             setCurrentPage(0);
             setEditingItem(null);
@@ -411,15 +410,12 @@ const GroceryItems: React.FC = () => {
             </div>
 
             {/* PRODUCT DETAILS POPUP */}
-   {/* PRODUCT DETAILS POPUP */}
-<ProductModal
-  selectedProduct={selectedProduct}
-  onClose={() => setSelectedProduct(null)}
-  allProducts={items}
-  onSelectProduct={setSelectedProduct}
-/>
-
-
+            <ProductModal
+                selectedProduct={selectedProduct}
+                onClose={() => setSelectedProduct(null)}
+                allProducts={items}
+                onSelectProduct={setSelectedProduct}
+            />
 
             {/* Create / Edit Item Modal */}
             <CreateItemModal
