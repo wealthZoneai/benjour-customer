@@ -6,18 +6,25 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getOrdersByStatus, updateOrderStatus } from "../../../services/apiHelpers";
- 
+
 // Types
 type OrderStatus = "PLACED" | "PREPARING" | "READY" | "ASSIGNED" | "PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED";
- 
+
 interface OrderItem { id: number; name: string; quantity: number; price: number; image?: string; }
 interface Order {
     id: string; orderNumber: string; date: string; status: OrderStatus; items: OrderItem[];
     totalAmount: number; deliveryAddress: string; customerName?: string; customerPhone?: string;
 }
- 
+
 // Tabs Config
-const TABS = [
+interface TabConfig {
+    id: OrderStatus;
+    label: string;
+    icon: React.ReactNode;
+    color: string;
+}
+
+const TABS: TabConfig[] = [
     { id: "PLACED", label: "New Orders", icon: <Package size={18} />, color: "text-blue-600 bg-blue-50" },
     { id: "PREPARING", label: "Preparing", icon: <ChefHat size={18} />, color: "text-orange-600 bg-orange-50" },
     { id: "READY", label: "Ready for Pickup", icon: <CheckCircle size={18} />, color: "text-lime-600 bg-lime-50" },
@@ -26,14 +33,14 @@ const TABS = [
     { id: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: <Truck size={18} />, color: "text-emerald-600 bg-emerald-50" },
     { id: "DELIVERED", label: "Delivered", icon: <CheckCircle size={18} />, color: "text-green-700 bg-green-100" },
 ];
- 
+
 const AdminOrderScreen: React.FC = () => {
     const [activeTab, setActiveTab] = useState<OrderStatus>("PLACED");
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [orderCounts, setOrderCounts] = useState<Record<OrderStatus, number>>({});
- 
+    const [orderCounts, setOrderCounts] = useState<Record<OrderStatus, number>>({'PLACED': 0, 'PREPARING': 0, 'READY': 0, 'ASSIGNED': 0, 'PICKUP': 0, 'OUT_FOR_DELIVERY': 0, 'DELIVERED': 0});
+
     const fetchOrders = useCallback(async (status: OrderStatus) => {
         setLoading(true);
         try {
@@ -56,7 +63,7 @@ const AdminOrderScreen: React.FC = () => {
             toast.error("Failed to fetch orders.");
         } finally { setLoading(false); }
     }, []);
- 
+
     const fetchOrderCounts = useCallback(async () => {
         try {
             const counts: Record<OrderStatus, number> = {} as any;
@@ -70,13 +77,13 @@ const AdminOrderScreen: React.FC = () => {
             toast.error("Failed to fetch order counts.");
         }
     }, []);
- 
+
     const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
         try {
             toast.loading(`Updating order ${orderId}...`, { id: 'status-update' });
             await updateOrderStatus(orderId, newStatus);
             toast.success(`Order status updated to ${newStatus}`, { id: 'status-update' });
- 
+
             const updatedOrder = orders.find(o => o.id === orderId);
             setOrders(prev => prev.filter(o => o.id !== orderId));
             if (updatedOrder) setOrderCounts(prev => ({ ...prev, [updatedOrder.status]: (prev[updatedOrder.status] || 1) - 1, [newStatus]: (prev[newStatus] || 0) + 1 }));
@@ -85,17 +92,17 @@ const AdminOrderScreen: React.FC = () => {
             toast.error("Failed to update status", { id: 'status-update' });
         }
     };
- 
+
     useEffect(() => { fetchOrders(activeTab); fetchOrderCounts(); }, [activeTab, fetchOrders, fetchOrderCounts]);
- 
+
     const filteredOrders = useMemo(() => {
         if (!searchQuery) return orders;
         const q = searchQuery.toLowerCase();
         return orders.filter(o => o.customerName?.toLowerCase().includes(q) || o.orderNumber.toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
     }, [orders, searchQuery]);
- 
+
     const activeTabData = TABS.find(t => t.id === activeTab);
- 
+
     return (
         <div className="min-h-screen bg-gray-50 pb-12 pt-20">
             {/* Header & Tabs */}
@@ -107,7 +114,7 @@ const AdminOrderScreen: React.FC = () => {
                         <StatCard icon={<Users className="text-white" size={20} />} label="New Customers" value="128" trend="45% Repeat" color="from-yellow-500 to-yellow-600" />
                         <StatCard icon={<Truck className="text-white" size={20} />} label="Avg Delivery" value="28 min" trend="3 min faster" color="from-indigo-500 to-indigo-600" />
                     </div>
- 
+
                     <div className="overflow-x-auto pb-0.5 no-scrollbar border-t border-gray-100">
                         <div className="flex w-max">
                             {TABS.map(tab => (
@@ -124,7 +131,7 @@ const AdminOrderScreen: React.FC = () => {
                     </div>
                 </div>
             </div>
- 
+
             {/* Main Content */}
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -140,7 +147,7 @@ const AdminOrderScreen: React.FC = () => {
                         </button>
                     </div>
                 </div>
- 
+
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {[...Array(8)].map((_, i) => <div key={i} className="h-72 bg-white rounded-xl border border-gray-100 shadow-sm animate-pulse"></div>)}
@@ -158,7 +165,7 @@ const AdminOrderScreen: React.FC = () => {
         </div>
     );
 };
- 
+
 // --- Subcomponents ---
 const StatCard = ({ icon, label, value, trend, color }: any) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition-shadow">
@@ -172,11 +179,11 @@ const StatCard = ({ icon, label, value, trend, color }: any) => (
         <p className="text-gray-500 text-xs font-medium mt-3 flex items-center gap-1"><TrendingUp size={12} className="text-green-500" />{trend}</p>
     </div>
 );
- 
+
 // 2. OrderCard Component (Zomato-style focused information)
 const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (id: string, status: OrderStatus) => void }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
- 
+
     // Determines the next logical status for a quick action button
     const getNextStatus = (currentStatus: OrderStatus): { id: OrderStatus, label: string, color: string } | null => {
         switch (currentStatus) {
@@ -196,11 +203,11 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                 return null;
         }
     };
- 
+
     const nextStatus = getNextStatus(order.status);
     const orderItemsCount = order.items.length;
     const currentTabInfo = TABS.find(t => t.id === order.status);
- 
+
     return (
         <motion.div
             layout
@@ -230,7 +237,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     {currentTabInfo?.label}
                 </span>
             </div>
- 
+
             {/* Body - Customer & Address */}
             <div className="p-5 flex-1 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-4">
@@ -242,7 +249,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                         <p className="text-sm text-gray-500">{order.customerPhone}</p>
                     </div>
                 </div>
- 
+
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <MapPin size={16} className="text-red-500 mt-1 shrink-0" />
                     <div>
@@ -251,7 +258,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     </div>
                 </div>
             </div>
- 
+
             {/* Items Summary & Total */}
             <div className="px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center justify-between mb-2">
@@ -278,7 +285,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     <p className="text-xl font-black text-red-600">₹{order.totalAmount}</p>
                 </div>
             </div>
- 
+
             {/* Footer - Actions */}
             <div className="p-5 flex justify-between items-center gap-2">
                 {nextStatus ? (
@@ -292,7 +299,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                 ) : (
                     <span className="flex-1 text-center text-sm font-medium text-gray-500">Order Completed</span>
                 )}
- 
+
                 {/* More Options Dropdown */}
                 <div className="relative">
                     <button
@@ -301,7 +308,7 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
                     >
                         <MoreVertical size={20} />
                     </button>
- 
+
                     <AnimatePresence>
                         {isMenuOpen && (
                             <>
@@ -335,11 +342,11 @@ const OrderCard = ({ order, onStatusUpdate }: { order: Order, onStatusUpdate: (i
         </motion.div>
     );
 }
- 
+
 // 3. EmptyState Component (Improved visual feedback)
 const EmptyState = ({ activeTab, searchQuery }: { activeTab: OrderStatus, searchQuery: string }) => {
     const tabInfo = TABS.find(t => t.id === activeTab);
- 
+
     return (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-300 shadow-inner mt-4">
             <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
@@ -354,11 +361,10 @@ const EmptyState = ({ activeTab, searchQuery }: { activeTab: OrderStatus, search
                     : `There are currently no orders that are in the ${tabInfo?.label.toLowerCase()} phase.`
                 }
             </p>
- 
+
         </div>
     );
 }
- 
- 
+
+
 export default AdminOrderScreen;
- 
