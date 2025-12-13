@@ -37,3 +37,7 @@ interface UploadCutoffBody {
   [key: string]: any;
 }
 
+interface ReviewData {
+  [key: string]: any;
+}
+

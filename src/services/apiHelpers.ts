@@ -178,8 +178,8 @@ export function deleteSubcategory(id: string) {
 //  SUB CATEGORIES ITEMS SYSTEM
 // ============================================
 // Get items for a specific subcategory
-export function getSubcategoryItems(subcategoryId: string) {
-  return server.get(`${endpoints.getSubcategoryItems}${subcategoryId}`, { requiresAuth: true });
+export function getSubcategoryItems(subcategoryId: string, page: number = 0, size: number = 2) {
+  return server.get(`${endpoints.getSubcategoryItems}${subcategoryId}&page=${page}&size=${size}`, { requiresAuth: true });
 }
 
 // Create a new item under a subcategory
@@ -193,7 +193,7 @@ export function createItem(subCategoryId: string, data: any) {
   formData.append("quantity", data.quantity?.toString() || "");
   formData.append("minValue", data.minValue?.toString() || "");
   formData.append("maxValue", data.maxValue?.toString() || "");
-  formData.append("stepValue", data.stepValue?.toString() || "");
+  // formData.append("stepValue", data.stepValue?.toString() || "");
   formData.append("unitType", data.unitType);
 
   if (data.file || data.imageFile) {
@@ -216,7 +216,7 @@ export function updateItem(itemId: string, data: any) {
   formData.append("quantity", data.quantity?.toString() || "");
   formData.append("minValue", data.minValue?.toString() || "");
   formData.append("maxValue", data.maxValue?.toString() || "");
-  formData.append("stepValue", data.stepValue?.toString() || "");
+  // formData.append("stepValue", data.stepValue?.toString() || "");
   formData.append("unitType", data.unitType);
 
   if (data.file || data.imageFile) {
@@ -251,7 +251,7 @@ export function searchItems(query: string) {
 
 // ============================================
 //  ADD TO CART SYSTEM
-export function fetchCaregotiesFilters(filter: string,id?:string) {
+export function fetchCaregotiesFilters(filter: string, id?: string) {
   return server.get(`${endpoints.categoriesFilter}${filter}&id=${id}`, { requiresAuth: true });
 }
 // addToCart
@@ -274,7 +274,8 @@ export function deleteFromCart(userId: any, itemId: any) {
 }
 
 // update cart quantity
-export function updateCartQuantity(userId: any, itemId: any, quantity: number) {
+export function updateCartQuantity(userId: any, itemId: number, quantity: number) {
+  console.log(userId, itemId, quantity);
   return server.put(
     `${endpoints.updateQuantity}${userId}&itemId=${itemId}&quantity=${quantity}`,
     {},
@@ -298,6 +299,12 @@ export function setFavoriteItem(itemId: string | number, isFavorite: boolean, us
     {},
     { requiresAuth: true }
   );
+}
+
+
+// Reviews
+export function submitReview(itemId: number, reviewData: ReviewData) {
+  return server.post(`${endpoints.submitReview}${itemId}`, reviewData, { requiresAuth: true });
 }
 
 // Home Screen Helpers

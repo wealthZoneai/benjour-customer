@@ -242,7 +242,7 @@ const Wishlist: React.FC = () => {
                     rating={item?.rating}
                     minValue={item?.minValue}
                     maxValue={item?.maxValue}
-                    stepValue={item?.stepValue}
+                    // stepValue={item?.stepValue}
                     unitType={item?.unitType}
                   />
                 </motion.div>

@@ -12,7 +12,7 @@ export interface CartItem {
   unitType: string | null;   // FIXED
   minValue: number | null;   // FIXED
   maxValue: number | null;   // FIXED
-  stepValue: number | null;  // FIXED
+  // stepValue: number | null;  // FIXED
 }
 
 
@@ -56,7 +56,6 @@ const cartSlice = createSlice({
           unitType: payload.unitType ?? null,
           minValue: payload.minValue ?? 1,
           maxValue: payload.maxValue ?? 50,
-          stepValue: payload.stepValue ?? 1,
 
           // quantity
           quantity: payload.quantity || payload.minValue || 1,
@@ -109,12 +108,14 @@ const cartSlice = createSlice({
 
       const newQty = item.quantity - amount;
 
-      if (newQty <= min) {
+      // Remove only when newQty < min (strictly less)
+      if (newQty < min) {
         state.items = state.items.filter((i) => i.id !== id);
       } else {
         item.quantity = newQty;
       }
     },
+
 
   },
 });

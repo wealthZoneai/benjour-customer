@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchChange }) => {
           unitType: cartItem.item.unitType,
           minValue: cartItem.item.minValue,
           maxValue: cartItem.item.maxValue,
-          stepValue: cartItem.item.stepValue,
+          // stepValue: cartItem.item.stepValue,
           discount: cartItem.item.discount,
         }));
 

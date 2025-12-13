@@ -193,83 +193,95 @@ const SubCategoryPage: React.FC = () => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
-                            {subcategories.map((subcategory: any, index: number) => (
-                                <motion.div
-                                    key={subcategory.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                                    whileHover={{ y: -8 }}
-                                    className="group relative bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100"
-                                    onClick={() =>
-                                        navigate(`/category/${categoryId}/items/${subcategory.id}`)
-                                    }
-                                >
-                                    {/* Gradient Overlay on Hover */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10" />
+                            {subcategories.map((subcategory: any, index: number) => {
+                                const isDisabled = subcategory.status === false;
 
-                                    {/* Image Container */}
-                                    <div className="relative h-48 overflow-hidden rounded-t-2xl bg-gray-100">
-                                        <img
-                                            src={
-                                                subcategory.imageUrl ||
-                                                "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80"
+                                return (
+                                    <motion.div
+                                        key={subcategory.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                                        whileHover={!isDisabled ? { y: -8 } : {}}
+                                        className={`group relative rounded-2xl shadow-sm cursor-pointer overflow-hidden border 
+                                            transition-all duration-300 border border-gray-100
+                                            ${isDisabled
+                                                ? "bg-gray-200 opacity-80 grayscale "
+                                                : "bg-white hover:shadow-2xl"
                                             }
-                                            alt={subcategory.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
+                                        `}
+                                        onClick={() =>
 
-                                        {/* Gradient Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                                            !isDisabled && navigate(`/category/${categoryId}/items/${subcategory.id}`)
+                                        }
+                                    >
+                                        {/* Gradient Overlay on Hover */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10" />
 
-                                        {/* Admin Buttons */}
-                                        {role === "ADMIN" && (
-                                            <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                {/* Edit */}
-                                                <button
-                                                    onClick={(e) => handleEditClick(subcategory, e)}
-                                                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-md transition-transform hover:scale-110"
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-
-                                                {/* Delete */}
-                                                <button
-                                                    onClick={(e) => handleDeleteClick(subcategory, e)}
-                                                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 shadow-md transition-transform hover:scale-110"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-5">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-2 capitalize line-clamp-1">
-                                            {subcategory.name}
-                                        </h3>
-
-                                        <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-                                            {subcategory.description || "Explore this category"}
-                                        </p>
-
-                                        {/* Explore Button */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold text-emerald-600 group-hover:text-emerald-700 transition-colors flex items-center gap-1">
-                                                Explore
-                                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                            </span>
-                                            <ChevronRight
-                                                size={20}
-                                                className="text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all"
+                                        {/* Image Container */}
+                                        <div className="relative h-48 overflow-hidden rounded-t-2xl bg-gray-100">
+                                            <img
+                                                src={
+                                                    subcategory.imageUrl ||
+                                                    "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80"
+                                                }
+                                                alt={subcategory.name}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
+
+                                            {/* Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+                                            {/* Admin Buttons */}
+                                            {role === "ADMIN" && (
+                                                <div className="absolute top-3 right-3 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                    {/* Edit */}
+                                                    <button
+                                                        onClick={(e) => handleEditClick(subcategory, e)}
+                                                        className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-md transition-transform hover:scale-110"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+
+                                                    {/* Delete */}
+                                                    <button
+                                                        onClick={(e) => handleDeleteClick(subcategory, e)}
+                                                        className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 shadow-md transition-transform hover:scale-110"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+
+                                        {/* Content */}
+                                        <div className="p-5">
+                                            <h3 className="text-lg font-bold text-gray-900 mb-2 capitalize line-clamp-1">
+                                                {subcategory.name}
+                                            </h3>
+
+                                            <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
+                                                {subcategory.description || "Explore this category"}
+                                            </p>
+
+                                            {/* Explore Button */}
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-semibold text-emerald-600 group-hover:text-emerald-700 transition-colors flex items-center gap-1">
+                                                    Explore
+                                                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                                </span>
+                                                <ChevronRight
+                                                    size={20}
+                                                    className="text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
                         </AnimatePresence>
+
                     </div>
                 )}
             </div>

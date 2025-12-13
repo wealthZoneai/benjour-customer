@@ -17,7 +17,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../Redux/store";
 import toast from "react-hot-toast";
 import ReviewModal, { type ReviewData } from "../components/ReviewModal";
-import { getCurrentOrder, getAllOrders } from "../services/apiHelpers";
+import { getCurrentOrder, getAllOrders, submitReview } from "../services/apiHelpers";
 
 interface OrderItem {
     id: number;
@@ -142,6 +142,12 @@ const Orders: React.FC = () => {
     const handleReviewSubmit = async (reviewData: ReviewData) => {
         // TODO: Call API to submit review
         console.log("Review submitted:", reviewData);
+        const reviewRes = await submitReview(reviewData.itemId, reviewData);
+        if (reviewRes.status === 200) {
+            toast.success("Review submitted successfully");
+            setReviewModalOpen(false);
+            setSelectedItemForReview(null);
+        }
         // await submitReview(reviewData);
     };
 

@@ -45,6 +45,9 @@ const endpoints = {
     getFavoriteItems: 'api/items/isFavorites',
     setFavoriteItem: 'api/items/setFavorite',
 
+    // Reviews
+    submitReview: 'api/reviews/addReview?itemId=',
+
     // Home Screen Sections
     getHomeBanner: 'api/home/banner',
     updateHomeBanner: 'api/home/banner',

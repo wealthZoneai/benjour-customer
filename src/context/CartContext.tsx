@@ -8,7 +8,7 @@ type CartItem = {
   image: string;
   maxValue: number;
   minValue: number;
-  stepValue: number;
+  // stepValue: number;
   unit: string;
 };
 

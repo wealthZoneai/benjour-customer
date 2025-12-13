@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Pencil, Trash2, Grid3x3, List, Search } from "lucide-react";
@@ -25,7 +25,7 @@ export interface GroceryProduct {
     category: string;
     minValue: number;
     maxValue: number;
-    stepValue: number;
+    // stepValue: number;
     unitType: string;
 }
 
@@ -44,20 +44,64 @@ const GroceryItems: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState("SELECT_FILTER");
 
-    // Fetch items on mount
-    useEffect(() => {
-        if (subcategoryId) {
-            fetchItems();
-        }
-    }, [subcategoryId]);
-   
+    // Pagination
+    // Pagination & Infinite Scroll
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize] = useState(12);
+    const [hasMore, setHasMore] = useState(true);
+    const observer = useRef<IntersectionObserver | null>(null);
 
-    const fetchItems = async () => {
+    const lastElementRef = useCallback((node: HTMLDivElement) => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setCurrentPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, hasMore]);
+
+
+    // Reset items when subcategory changes
+    useEffect(() => {
+        setItems([]);
+        setCurrentPage(0);
+        setHasMore(true);
+    }, [subcategoryId]);
+
+    // Fetch items when page changes
+    useEffect(() => {
+        if (items.length === 0 && currentPage === 0) {
+            fetchItems(0);
+        } else if (currentPage > 0) {
+            fetchItems(currentPage);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage, subcategoryId]);
+
+
+
+
+
+    const fetchItems = async (pageVal: number = 0) => {
         try {
             setLoading(true);
-            const response = await getSubcategoryItems(subcategoryId!);
-            if (response.data && Array.isArray(response.data)) {
-                setItems(response.data);
+            const response = await getSubcategoryItems(subcategoryId!, pageVal, pageSize);
+            if (response.data) {
+                let newItems: GroceryProduct[] = [];
+                let total = 0;
+
+                if (response.data.content && Array.isArray(response.data.content)) {
+                    newItems = response.data.content;
+                    total = response.data.totalPages;
+                } else if (Array.isArray(response.data)) {
+                    newItems = response.data;
+                    total = 1;
+                }
+
+                setItems(prev => pageVal === 0 ? newItems : [...prev, ...newItems]);
+                setHasMore(pageVal < total - 1);
             }
         } catch (error) {
             console.error("Error fetching items:", error);
@@ -91,7 +135,9 @@ const GroceryItems: React.FC = () => {
         try {
             await deleteItem(id.toString());
             toast.success("Item deleted successfully!");
-            fetchItems();
+            await deleteItem(id.toString());
+            toast.success("Item deleted successfully!");
+            fetchItems(currentPage);
         } catch (error) {
             console.error("Error deleting item:", error);
             toast.error("Failed to delete item");
@@ -111,8 +157,9 @@ const GroceryItems: React.FC = () => {
                 await createItem(subcategoryId!, data);
                 toast.success("Item created successfully!");
             }
-
-            fetchItems();
+            
+            fetchItems(0);
+            setCurrentPage(0);
             setEditingItem(null);
             setItemModalOpen(false);
         } catch (error: any) {
@@ -139,7 +186,8 @@ const GroceryItems: React.FC = () => {
         try {
             await uploadBulkItems(subcategoryId!, excelFile, zipFile);
             toast.success("Items uploaded successfully!");
-            fetchItems();
+            toast.success("Items uploaded successfully!");
+            fetchItems(currentPage);
             setItemModalOpen(false);
         } catch (error: any) {
             console.error("Error uploading items:", error);
@@ -149,8 +197,8 @@ const GroceryItems: React.FC = () => {
 
 
 
-    // Loading state
-    if (loading) {
+    // Initial Loading state (only for first load)
+    if (loading && items.length === 0) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="text-center">
@@ -248,8 +296,7 @@ const GroceryItems: React.FC = () => {
                     {/* Results Count */}
                     <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
                         <p>
-                            Showing <span className="font-semibold text-gray-800">{items.length}</span> of{" "}
-                            <span className="font-semibold text-gray-800">{items.length}</span> products
+                            Showing <span className="font-semibold text-gray-800">{items.length}</span> products
                         </p>
                         {searchQuery && (
                             <button
@@ -334,7 +381,7 @@ const GroceryItems: React.FC = () => {
                                         rating={product?.rating}
                                         minValue={product?.minValue}
                                         maxValue={product?.maxValue}
-                                        stepValue={product?.stepValue}
+                                        // stepValue={product?.stepValue}
                                         unitType={product?.unitType}
                                         onViewDetails={() => setSelectedProduct(product)}
                                     />
@@ -343,6 +390,21 @@ const GroceryItems: React.FC = () => {
                         </AnimatePresence>
                     </div>
                 )}
+
+
+                {/* Infinite Scroll Loader */}
+                {loading && items.length > 0 && (
+                    <div className="flex justify-center p-4">
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full"
+                        />
+                    </div>
+                )}
+
+                {/* Intersection Sentinel */}
+                <div ref={lastElementRef} className="h-4" />
             </div>
 
             {/* PRODUCT DETAILS POPUP */}

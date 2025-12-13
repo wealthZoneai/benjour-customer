@@ -40,7 +40,7 @@ const defaultData = {
   quantity: "",
   minValue: "",
   maxValue: "",
-  stepValue: "",
+  // stepValue: "",
   unitType: "",
 };
 
@@ -435,7 +435,7 @@ export default function CreateItemModal({
                     step="0.1"
                   />
 
-                  <InputMini
+                  {/* <InputMini
                     label="Step Value"
                     name="stepValue"
                     type="number"
@@ -443,7 +443,7 @@ export default function CreateItemModal({
                     onChange={handleChange}
                     placeholder="0.5"
                     step="0.1"
-                  />
+                  /> */}
                 </div>
 
 

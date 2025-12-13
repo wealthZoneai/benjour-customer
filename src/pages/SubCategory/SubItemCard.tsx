@@ -18,7 +18,7 @@ interface GroceryProductCardProps {
   category: string;
   minValue?: number;
   maxValue?: number;
-  stepValue?: number;
+  // stepValue?: number;
   unitType?: string;
 
   onViewDetails?: () => void;
@@ -34,14 +34,14 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
   rating = 4,
   minValue = 1,
   maxValue = 10,
-  stepValue = 1,
+  // stepValue = 1,
   unitType = "PIECE",
   onViewDetails,
 }) => {
   // Quantity starts at minValue
 const min = minValue ?? 1;
 const max = maxValue ?? 50;
-const step = stepValue ?? 1;
+const step = minValue ?? 1;
 const unit = unitType || "";  // empty unit when not provided
 
 const [quantity, setQuantity] = React.useState(min);
@@ -116,7 +116,7 @@ const [quantity, setQuantity] = React.useState(min);
         return;
       }
 
-      dispatch(addToCart({ id, name, image, price, quantity, discount,minValue,maxValue,stepValue,unitType }));
+      dispatch(addToCart({ id, name, image, price, quantity, discount,minValue,maxValue,unitType }));
       toast.success(`${name} added to cart 🛒`);
       setQuantity(minValue);
     } catch (error) {
