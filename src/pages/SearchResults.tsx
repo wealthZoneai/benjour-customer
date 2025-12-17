@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, Heart } from "lucide-react";
-import {  useSelector } from "react-redux";
+import { Search } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { searchItems, AddToCart, setFavoriteItem } from "../services/apiHelpers";
-import type { RootState } from "../Redux/store";
+import { searchItems } from "../services/apiHelpers";
+import SubItemCard from "./SubCategory/SubItemCard";
 
 interface Product {
     id: number;
@@ -16,14 +15,16 @@ interface Product {
     imageUrl?: string;
     description?: string;
     isFavorite?: boolean;
-    category?: string; // Optional if API doesn't return it
+    category?: string;
+    minValue?: number;
+    maxValue?: number;
+    unitType?: string;
+    stock?: number;
 }
 
 const SearchResults: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    // const dispatch = useDispatch();
-    const userId = useSelector((state: RootState) => state.user.userId);
     const query = searchParams.get("q") || "";
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
@@ -38,13 +39,9 @@ const SearchResults: React.FC = () => {
             try {
                 const response = await searchItems(query);
                 if (response.data) {
-                    // Normalize data if necessary (e.g. image vs imageUrl)
                     const mappedProducts = response.data.map((item: any) => ({
                         ...item,
-                        // Ensure we use the correct image field. API mock shows 'imageUrl' or 'images' in previous contexts.
-                        // The screenshot shows "imageUrl" in the response body.
                         imageUrl: item.imageUrl || item.image || "https://via.placeholder.com/400",
-                        // Ensure category exists or default
                         category: item.category || "General"
                     }));
                     setProducts(mappedProducts);
@@ -52,7 +49,7 @@ const SearchResults: React.FC = () => {
                     setProducts([]);
                 }
             } catch (error) {
-            toast.error("Failed to fetch search results.");
+                toast.error("Failed to fetch search results.");
                 setProducts([]);
             } finally {
                 setLoading(false);
@@ -61,39 +58,6 @@ const SearchResults: React.FC = () => {
 
         fetchSearchResults();
     }, [query]);
-
-    const handleAddToCart = async (product: Product) => {
-        if (!userId) {
-            toast.error("Please log in to add items to cart.");
-            return;
-        }
-        try {
-            await AddToCart(userId, product.id.toString(), 1);
-            toast.success(`${product.name} added to cart!`);
-        } catch (error) {
-            console.error("Error adding to cart:", error);
-            toast.error("Failed to add to cart.");
-        }
-    };
-
-    const handleToggleFavorite = async (product: Product) => {
-        if (!userId) {
-            toast.error("Please log in to manage favorites.");
-            return;
-        }
-        try {
-            const newStatus = !product.isFavorite;
-            await setFavoriteItem(product.id, newStatus,userId);
-            // Optimistic update
-            setProducts(prev => prev.map(p =>
-                p.id === product.id ? { ...p, isFavorite: newStatus } : p
-            ));
-            toast.success(newStatus ? "Added to favorites!" : "Removed from favorites!");
-        } catch (error) {
-            console.error("Error toggling favorite:", error);
-            toast.error("Failed to update favorite status.");
-        }
-    };
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -150,69 +114,21 @@ const SearchResults: React.FC = () => {
                             <motion.div
                                 key={product.id}
                                 variants={itemVariants}
-                                whileHover={{ y: -8 }}
-                                className="bg-white rounded-2xl shadow-md overflow-hidden group cursor-pointer transition-shadow hover:shadow-xl"
-                                onClick={() => navigate(`/product/${product.id}`)}
                             >
-                                {/* Product Image */}
-                                <div className="relative h-56 overflow-hidden bg-gray-100">
-                                    <img
-                                        src={product.imageUrl}
-                                        alt={product.name}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                    />
-                                    {/* Category Badge - Optional, shown if available */}
-                                    {product.category && (
-                                        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700">
-                                            {product.category}
-                                        </div>
-                                    )}
-                                    {/* Quick Actions */}
-                                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleToggleFavorite(product);
-                                            }}
-                                            className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition"
-                                        >
-                                            <Heart className={`w-4 h-4 ${product.isFavorite ? "text-red-500 fill-current" : "text-gray-400"}`} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleAddToCart(product);
-                                            }}
-                                            className="p-2 bg-white rounded-full shadow-lg hover:bg-green-50 transition"
-                                        >
-                                            <ShoppingCart className="w-4 h-4 text-green-600" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Product Info */}
-                                <div className="p-4">
-                                    <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1">
-                                        {product.name}
-                                    </h3>
-                                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                                        {product.description}
-                                    </p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-green-600">
-                                            ${product.price.toFixed(2)}
-                                        </span>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleAddToCart(product);
-                                            }}
-                                            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
-                                        >
-                                            Add to Cart
-                                        </button>
-                                    </div>
-                                </div>
+                                <SubItemCard
+                                    id={product.id}
+                                    name={product.name}
+                                    price={product.price}
+                                    image={product.imageUrl || ""}
+                                    category={product.category || "General"}
+                                    discount={product.discount}
+                                    rating={product.rating}
+                                    minValue={product.minValue}
+                                    maxValue={product.maxValue}
+                                    unitType={product.unitType}
+                                    stock={product.stock}
+                                    onViewDetails={() => navigate(`/product/${product.id}`)}
+                                />
                             </motion.div>
                         ))}
                     </motion.div>

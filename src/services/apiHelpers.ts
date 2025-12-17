@@ -315,9 +315,13 @@ export const getRatingsStatus = (userId: string, orderId:string) => {
 
 // Home Screen Helpers
 // Banner
-export function getHomeBanner() {
-  return server.get(endpoints.getHomeBanner);
+export function getHomeBanner(section: string) {
+  return server.get(endpoints.homeBrands, {
+    params: { section },
+    requiresAuth: true
+  });
 }
+
 
 export function updateHomeBanner(data: any) {
   return server.put(endpoints.updateHomeBanner, data, { requiresAuth: true });

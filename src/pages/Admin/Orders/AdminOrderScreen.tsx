@@ -7,7 +7,6 @@ import {
 import toast from "react-hot-toast";
 import { getOrdersByStatus, updateOrderStatus } from "../../../services/apiHelpers";
 
-// Types
 type OrderStatus = "PLACED" | "PREPARING" | "READY" | "ASSIGNED" | "PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED";
 
 interface OrderItem { id: number; name: string; quantity: number; price: number; image?: string; }
@@ -16,7 +15,6 @@ interface Order {
     totalAmount: number; deliveryAddress: string; customerName?: string; customerPhone?: string;
 }
 
-// Tabs Config
 interface TabConfig {
     id: OrderStatus;
     label: string;

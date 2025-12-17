@@ -11,14 +11,14 @@ interface BannerData {
   videoUrl?: string;
   imageUrl?: string;
   title?: string;
-  subtitle?: string;
+  description?: string;
 }
 
 const fallbackBanner: BannerData = {
   imageUrl:
     "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=1600",
   title: "Craving Something Delicious?",
-  subtitle:
+  description:
     "Order from your favorite restaurants and get it delivered fresh to your doorstep",
 };
 
@@ -26,19 +26,19 @@ const HomeBanner: React.FC = () => {
   const { role } = useSelector((state: RootState) => state.user);
   const [bannerData, setBannerData] = useState<BannerData>(fallbackBanner);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [, setIsVideoReady] = useState(false);
-  const [, setIsVideoPlaying] = useState(false);
+  const [videoReady, setIsVideoReady] = useState(false);
+  const [videoPlaying, setIsVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-
+console.log(bannerData);
   useEffect(() => {
     fetchBanner();
   }, []);
 
   const fetchBanner = async () => {
     try {
-      const response = await getHomeBanner();
+      const response = await getHomeBanner('HOME_BANNER');
       if (response.data) {
-        setBannerData(response.data);
+        setBannerData(response.data[0]);
       }
     } catch (error) {
       console.error("Error fetching banner:", error);
@@ -65,27 +65,28 @@ const HomeBanner: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video && bannerData.videoUrl) {
-      video.src = bannerData.videoUrl;
-      video.load();
-      video.play().catch(() => setIsVideoPlaying(false));
-    }
-  }, [bannerData.videoUrl]);
+
+
 
   return (
-    <div className="relative w-full min-h-[75vh] flex items-center overflow-hidden mt-16">
+    <div className="relative w-full h-screen flex items-center overflow-hidden mt-16">
       {/* Video Background */}
       <video
+        key={bannerData?.videoUrl || "fallback-video"}
+        ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       >
-        <source src="/videos/alcohol1.mp4" type="video/mp4" />
+        <source
+          src={bannerData?.videoUrl || "/videos/alcohol1.mp4"}
+          type="video/mp4"
+        />
       </video>
+
+
 
       {/* Dark Overlay for better text readability */}
       <div className="absolute inset-0 bg-black/50" />
@@ -121,7 +122,7 @@ const HomeBanner: React.FC = () => {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
             >
-              {bannerData.title || fallbackBanner.title}
+              {bannerData?.title || fallbackBanner?.title}
             </motion.h1>
 
             {/* Subtitle */}
@@ -131,7 +132,7 @@ const HomeBanner: React.FC = () => {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-lg sm:text-xl text-white mb-8 max-w-xl leading-relaxed"
             >
-              {bannerData.subtitle || fallbackBanner.subtitle}
+              {bannerData?.description || fallbackBanner?.description}
             </motion.p>
 
             {/* Search Bar */}
@@ -207,7 +208,7 @@ const HomeBanner: React.FC = () => {
               {/* IMAGE WRAPPER (Gradient only on image) */}
               <div className="relative w-[500px] h-[400px] rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src={alcoholImage}
+                  src={bannerData?.imageUrl || fallbackBanner?.imageUrl}
                   alt="Alcohol"
                   className="w-full h-full object-cover"
                 />

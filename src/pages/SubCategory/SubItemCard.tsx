@@ -1,5 +1,5 @@
-import React from "react";
-import { Heart, ShoppingCart, Plus, Minus, Star, Sparkles } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Heart, ShoppingCart, Plus, Minus, Star, Sparkles, Ban } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../../Redux/cartSlice";
@@ -18,9 +18,8 @@ interface GroceryProductCardProps {
   category: string;
   minValue?: number;
   maxValue?: number;
-  // stepValue?: number;
   unitType?: string;
-
+  stock?: number;
   onViewDetails?: () => void;
 }
 
@@ -29,30 +28,36 @@ const SubItemCard: React.FC<GroceryProductCardProps> = ({
   name,
   image,
   category,
-  price,  
-  discount = 5,
+  price,
+  discount = 0,
   rating = 4,
   minValue = 1,
-  maxValue = 10,
-  // stepValue = 1,
+  maxValue = 50,
   unitType = "PIECE",
+  stock = 100, // Default to 100 if not provided, or handle as infinite? Better to have a safe default.
   onViewDetails,
 }) => {
-  // Quantity starts at minValue
-const min = minValue ?? 1;
-const max = maxValue ?? 50;
-const step = minValue ?? 1;
-const unit = unitType || "";  // empty unit when not provided
+  // Determine if using decimal units (e.g. Kg, L)
+  const isDecimalUnit = ["KILOGRAM", "LITRE", "GRAM", "MILLILITER", "KG", "L", "G", "ML"].includes(unitType.toUpperCase());
 
-const [quantity, setQuantity] = React.useState(min);
-  const [isAdding, setIsAdding] = React.useState(false);
+  // Logic for Step & Min/Max
+  // If no minValue is provided for decimal units, default to 0.5.
+  const safeMinValue = minValue > 0 ? minValue : (isDecimalUnit ? 0.5 : 1);
+  const step = isDecimalUnit ? safeMinValue : 1;
+  const maxLimit = Math.min(maxValue || 50, stock);
+
+  const [quantity, setQuantity] = useState(safeMinValue);
+  const [isAdding, setIsAdding] = useState(false);
   const dispatch = useDispatch();
 
   const wishlist = useSelector((state: RootState) => state.wishlist.items);
   const userId = useSelector((state: RootState) => state.user.userId);
   const isWishlisted = wishlist.some((item) => item.id === id);
 
-
+  // Reset quantity if props change significantly
+  useEffect(() => {
+    setQuantity(safeMinValue);
+  }, [id, safeMinValue]);
 
   const toggleWishlist = async () => {
     if (!userId) {
@@ -69,7 +74,7 @@ const [quantity, setQuantity] = React.useState(min);
     }
 
     try {
-      const response = await setFavoriteItem(id, newFavoriteStatus,userId);
+      const response = await setFavoriteItem(id, newFavoriteStatus, userId);
 
       if (!response || !response.data) {
         if (isWishlisted) dispatch(addToWishlist({ id, name, price, image, category }));
@@ -95,14 +100,31 @@ const [quantity, setQuantity] = React.useState(min);
     }
   };
 
+  const updateQuantity = (newQty: number) => {
+    // Round to 2 decimals to avoid floating point errors
+    const roundedQty = Math.round(newQty * 100) / 100;
+
+    if (roundedQty < safeMinValue) return;
+    if (roundedQty > maxLimit) {
+      toast.error(`Maximum limit is ${maxLimit} ${unitLabel}`);
+      return;
+    }
+    setQuantity(roundedQty);
+  };
+
   const handleAddToCart = async () => {
     if (!userId) {
       toast.error("Please login before adding items to cart");
       return;
     }
 
-    if (quantity < minValue) {
-      toast.error(`Minimum quantity is ${minValue} ${unit}`);
+    if (stock <= 0) {
+      toast.error("Product is out of stock");
+      return;
+    }
+
+    if (quantity > stock) {
+      toast.error(`Only ${stock} ${unitLabel} available in stock`);
       return;
     }
 
@@ -115,20 +137,18 @@ const [quantity, setQuantity] = React.useState(min);
         toast.error("Failed to add item to cart");
         return;
       }
-      // ✅ Find the cart item for this product
-    const cartItem = response.data.cartItems.find(
-      (ci: any) => ci.item.id === id
-    );
 
-    if (!cartItem) {
-      toast.error("Cart item not found");
-      return;
-    }
+      const cartItem = response.data.cartItems.find(
+        (ci: any) => ci.item.id === id
+      );
 
-
-      dispatch(addToCart({ cartItemId: cartItem.id, id, name, image, price, quantity, discount,minValue,maxValue,unitType }));
-      toast.success(`${name} added to cart 🛒`);
-      setQuantity(minValue);
+      if (!cartItem) {
+        // Fallback if not found in response immediately (rare)
+        toast.success(`${name} added to cart 🛒`);
+      } else {
+        dispatch(addToCart({ cartItemId: cartItem.id, id, name, image, price, quantity, discount, minValue, maxValue, unitType }));
+        toast.success(`${name} added to cart 🛒`);
+      }
     } catch (error) {
       console.error("Cart API Error:", error);
       toast.error("Something went wrong while adding item");
@@ -137,29 +157,42 @@ const [quantity, setQuantity] = React.useState(min);
     }
   };
 
-  const originalPrice = (price / (1 - discount / 100)).toFixed(0);
+  const originalPrice = (price / (1 - discount / 100));
+  const finalPrice = price * quantity;
+  const finalOriginalPrice = originalPrice * quantity;
 
-  const unitLabel = unit 
+  const unitLabel = unitType
     .replace("LITRE", "L")
     .replace("MILLILITER", "ml")
     .replace("KILOGRAM", "kg")
     .replace("GRAM", "g")
     .replace("PIECE", "pc")
-    .replace("PACKET", "pkt");
+    .replace("PACKET", "pkt")
+    || "";
+
+  const isOutOfStock = stock <= 0;
 
   return (
     <motion.div
       whileHover={{ y: -6 }}
-      className="relative group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
+      className="relative group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
     >
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10" />
 
       {/* Discount Badge */}
-      {discount > 0 && (
+      {discount > 0 && !isOutOfStock && (
         <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-20 flex items-center gap-1">
           <Sparkles size={12} />
           {discount}% OFF
+        </div>
+      )}
+
+      {/* Out of Stock Badge */}
+      {isOutOfStock && (
+        <div className="absolute top-3 left-3 bg-gray-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-20 flex items-center gap-1">
+          <Ban size={12} />
+          Out of Stock
         </div>
       )}
 
@@ -176,16 +209,16 @@ const [quantity, setQuantity] = React.useState(min);
       </button>
 
       {/* Product Image */}
-      <div className="relative w-full h-48 overflow-hidden bg-gray-50">
+      <div className="relative w-full h-48 overflow-hidden bg-gray-50 shrink-0">
         <img
           src={image}
           alt={name}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
         />
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow">
 
         {/* Product Name */}
         <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-2 min-h-[2.5rem]">
@@ -198,73 +231,77 @@ const [quantity, setQuantity] = React.useState(min);
             <Star
               key={i}
               size={14}
-              className={`${i < rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`}
+              className={`${i < Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`}
             />
           ))}
-          <span className="text-xs text-gray-500 ml-1">({rating}0)</span>
+          <span className="text-xs text-gray-500 ml-1">({rating})</span>
         </div>
 
         {/* Dynamic Price */}
-        <div className="flex items-baseline gap-2 mb-3">
+        <div className="flex items-baseline gap-2 mb-3 mt-auto">
           <span className="text-xl font-bold text-emerald-600">
-            ₹{(price * quantity).toFixed(2)}
+            ₹{finalPrice.toFixed(2)}
           </span>
 
           {discount > 0 && (
             <span className="text-sm text-gray-400 line-through">
-              ₹{(Number(originalPrice) * quantity).toFixed(2)}
+              ₹{finalOriginalPrice.toFixed(2)}
             </span>
           )}
         </div>
 
         {/* DYNAMIC QUANTITY SELECTOR */}
-        <div className="flex items-center justify-between mb-4 bg-emerald-50 py-2 px-3 rounded-xl">
+        {!isOutOfStock ? (
+          <div className="flex items-center justify-between mb-4 bg-emerald-50 py-2 px-3 rounded-xl">
 
-          {/* Minus */}
-          <button
-            onClick={() =>
-              setQuantity(prev =>
-                Math.max(minValue, prev - step)
-              )
-            }
-            disabled={quantity <= minValue}
-            className={`w-8 h-8 rounded-full flex items-center justify-center
-              ${quantity <= minValue
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-100"
-              }`}
-          >
-            <Minus size={14} />
-          </button>
+            {/* Minus */}
+            <button
+              onClick={() => updateQuantity(quantity - step)}
+              disabled={quantity <= safeMinValue}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors
+              ${quantity <= safeMinValue
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-100"
+                }`}
+            >
+              <Minus size={14} />
+            </button>
 
-          {/* Quantity Display */}
-          <span className="text-md font-semibold text-gray-800">
-            {quantity} {unitLabel}
-          </span>
+            {/* Quantity Display */}
+            <span className="text-md font-semibold text-gray-800 tabular-nums">
+              {quantity} {unitLabel}
+            </span>
 
-          {/* Plus */}
-          <button
-            onClick={() =>
-              setQuantity(prev =>
-                Math.min(max, prev + step)
-              )
-            }
-            disabled={quantity >= max}
-            className={`w-8 h-8 rounded-full flex items-center justify-center
-              ${quantity >= max
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-100"
-              }`}
-          >
-            <Plus size={14} />
-          </button>
-        </div>
+            {/* Plus */}
+            <button
+              onClick={() => updateQuantity(quantity + step)}
+              disabled={quantity >= maxLimit}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors
+              ${quantity >= maxLimit
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-100"
+                }`}
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="mb-4 py-2 px-3 rounded-xl bg-gray-100 text-center text-gray-500 text-sm font-medium">
+            Currently Unavailable
+          </div>
+        )}
 
         {/* Add to Cart */}
         <button
           onClick={handleAddToCart}
-          disabled={isAdding}
-          className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-xl font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isAdding || isOutOfStock}
+          className={`w-full py-2.5 rounded-xl font-semibold transition-all shadow-md flex items-center justify-center gap-2
+             ${isOutOfStock
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 hover:shadow-lg'
+            }
+             disabled:opacity-80
+          `}
         >
           {isAdding ? (
             <>
@@ -277,8 +314,8 @@ const [quantity, setQuantity] = React.useState(min);
             </>
           ) : (
             <>
-              <ShoppingCart size={16} />
-              Add to Cart
+              {isOutOfStock ? <Ban size={16} /> : <ShoppingCart size={16} />}
+              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
             </>
           )}
         </button>

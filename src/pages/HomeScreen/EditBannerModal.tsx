@@ -23,12 +23,12 @@ const EditBannerModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDat
     const [loading, setLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState(initialData.imageUrl);
+    const [preview, setPreview] = useState(initialData?.imageUrl);
 
     useEffect(() => {
         if (isOpen) {
             setForm(initialData);
-            setPreview(initialData.imageUrl);
+            setPreview(initialData?.imageUrl);
             setImageFile(null);
             setVideoFile(null);
         }

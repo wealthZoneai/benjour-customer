@@ -8,44 +8,45 @@ import {
   getHomeCombos,
   createHomeCombo,
   updateHomeCombo,
-  deleteHomeCombo
+  deleteHomeCombo,
+  getHomeBanner
 } from "../../services/apiHelpers";
 
 interface ComboItem {
   id: number;
-  image: string;
+  imageUrl: string;
   title: string;
-  subtitle: string;
+  description: string;
   className: string;
 }
 
 const defaultCombos: ComboItem[] = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHdpbmVzfGVufDB8fDB8fHww&fm=jpg&q=60&w=3000",
+    imageUrl: "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHdpbmVzfGVufDB8fDB8fHww&fm=jpg&q=60&w=3000",
     title: "The Taste of Europe",
-    subtitle: "Curated wines from Italy, France & Spain",
+    description: "Curated wines from Italy, France & Spain",
     className: "md:col-span-2 md:row-span-2 h-[500px]",
   },
   {
     id: 2,
-    image: "https://plus.unsplash.com/premium_photo-1682097091093-dd18b37764a5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8d2luZXxlbnwwfHwwfHx8MA%3D%3D&fm=jpg&q=60&w=3000",
+    imageUrl: "https://plus.unsplash.com/premium_photo-1682097091093-dd18b37764a5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8d2luZXxlbnwwfHwwfHx8MA%3D%3D&fm=jpg&q=60&w=3000",
     title: "Mixed Wine Packs",
-    subtitle: "Perfect for tasting parties",
+    description: "Perfect for tasting parties",
     className: "md:col-span-1 md:row-span-1 h-[240px]",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=1000",
+    imageUrl: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=1000",
     title: "Paris Best Reds",
-    subtitle: "Bold & Elegant",
+    description: "Bold & Elegant",
     className: "md:col-span-1 md:row-span-1 h-[240px]",
   },
   {
     id: 4,
-    image: "https://images.unsplash.com/photo-1559563362-c667ba5f5480?auto=format&fit=crop&q=80&w=1000",
+    imageUrl: "https://images.unsplash.com/photo-1559563362-c667ba5f5480?auto=format&fit=crop&q=80&w=1000",
     title: "Classic Collection",
-    subtitle: "Timeless favorites",
+    description: "Timeless favorites",
     className: "md:col-span-2 md:row-span-1 h-[240px]",
   },
 ];
@@ -56,20 +57,30 @@ const Combo: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ComboItem | null>(null);
 
-  useEffect(() => {
-    fetchCombos();
-  }, []);
-
-  const fetchCombos = async () => {
-    try {
-      const response = await getHomeCombos();
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        setCombos(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching combos:", error);
-    }
-  };
+   useEffect(() => {
+     fetchBanner();
+   }, []);
+ 
+   const fetchBanner = async () => {
+     try {
+       const response = await getHomeBanner('SHOP_COLLECTION');
+       console.log(response.data);
+       if (response.data) {
+        response.data.map((item: any) => {
+          return {
+            ...item,
+            id: item.id,
+            image: item.imageUrl,
+            title: item.title,
+            subtitle: item.description,
+          };
+        });
+         setCombos(response.data);
+       }
+     } catch (error) {
+       console.error("Error fetching banner:", error);
+     }
+   };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this combo?")) return;
@@ -135,7 +146,7 @@ const Combo: React.FC = () => {
                 <div className="relative h-[420px] rounded-3xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300">
                   {/* Image */}
                   <img
-                    src={item.image}
+                    src={item.imageUrl}
                     alt={item.title}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
@@ -187,7 +198,7 @@ const Combo: React.FC = () => {
                         {item.title}
                       </h3>
                       <p className="text-gray-200 text-sm mb-4">
-                        {item.subtitle}
+                        {item.description}
                       </p>
                       <div className="flex items-center gap-2 text-orange-400 font-semibold">
                         <span className="text-sm">Shop Now</span>
@@ -270,7 +281,8 @@ interface ModalProps {
 const ComboModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onSuccess }) => {
   const [form, setForm] = useState({
     title: "",
-    subtitle: "",
+    description: "",
+    imageUrl: "",
     className: "md:col-span-1 md:row-span-1 h-[240px]",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -282,14 +294,16 @@ const ComboModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onSucc
       if (initialData) {
         setForm({
           title: initialData.title,
-          subtitle: initialData.subtitle,
+          description: initialData.description,
+          imageUrl: initialData.imageUrl,
           className: initialData.className,
         });
-        setPreview(initialData.image);
+        setPreview(initialData.imageUrl);
       } else {
         setForm({
           title: "",
-          subtitle: "",
+          description: "",
+          imageUrl: "",
           className: "md:col-span-1 md:row-span-1 h-[240px]",
         });
         setPreview("");
@@ -314,7 +328,7 @@ const ComboModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onSucc
     try {
       const formData = new FormData();
       formData.append("title", form.title);
-      formData.append("subtitle", form.subtitle);
+      formData.append("subtitle", form.description);
       formData.append("className", form.className);
       if (imageFile) formData.append("image", imageFile);
 
@@ -386,12 +400,12 @@ const ComboModal: React.FC<ModalProps> = ({ isOpen, onClose, initialData, onSucc
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Subtitle</label>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
                 <input
                   type="text"
                   required
-                  value={form.subtitle}
-                  onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                 />
               </div>

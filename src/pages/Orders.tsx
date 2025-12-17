@@ -60,6 +60,7 @@ const Orders: React.FC = () => {
 
         const fetchOrders = async () => {
             setLoading(true);
+
             try {
                 const [currentOrderRes, allOrdersRes] = await Promise.all([
                     getCurrentOrder(userId).catch((err: any) => {
@@ -73,20 +74,18 @@ const Orders: React.FC = () => {
                 ]);
 
                 const mapApiItemToUiItem = (apiItem: any) => ({
-                    id: apiItem.item?.id || crypto.randomUUID(),
-                    name: apiItem.item?.name || "Unknown Item",
-                    quantity: apiItem.quantity || 1,
-                    price: apiItem.item?.price || 0,
-                    image: apiItem.item?.imageUrl || "https://via.placeholder.com/100",
+                    id: apiItem.id || crypto.randomUUID(),
+                    name: apiItem.name || "Unknown Item",
+                    quantity: apiItem.quantity ?? 1,
+                    price: apiItem.priceAtPurchase ?? apiItem.price ?? 0,
+                    image: apiItem.imageUrl || "https://via.placeholder.com/100",
                 });
 
-                const mapToOrder = (
-                    data: any,
-                    statusOverride?: Order["status"]
-                ): Order => {
-                    const items = data.orderItems
-                        ? data.orderItems.map(mapApiItemToUiItem)
-                        : [mapApiItemToUiItem(data)];
+                // ✅ MAP ORDER (NEW DTO SHAPE)
+                const mapToOrder = (data: any): Order => {
+                    const items = Array.isArray(data.items)
+                        ? data.items.map(mapApiItemToUiItem)
+                        : [];
 
                     const totalByItems = items.reduce(
                         (acc: number, item: any) => acc + item.price * item.quantity,
@@ -94,11 +93,11 @@ const Orders: React.FC = () => {
                     );
 
                     return {
-                        id: data.id?.toString() || crypto.randomUUID(),
-                        orderNumber: `ORD-${data.id ?? crypto.randomUUID().slice(0, 6)}`,
+                        id: data.orderId?.toString() || crypto.randomUUID(),
+                        orderNumber: data.orderCode || "ORD-N/A",
                         date: data.orderDate || new Date().toISOString(),
-                        status: statusOverride || data.status || "PLACED",
-                        totalAmount: data.totalAmount || totalByItems,
+                        status: data.status || "PLACED",
+                        totalAmount: data.totalAmount ?? totalByItems,
                         deliveryAddress: data.deliveryAddress || "Default Address",
                         items,
                     };
@@ -108,27 +107,20 @@ const Orders: React.FC = () => {
 
                 const currentData = currentOrderRes.data;
                 if (Array.isArray(currentData)) {
-                    formattedOrders.push(
-                        ...currentData.map((o: any) =>
-                            mapToOrder(o)
-                        )
-                    );
+                    formattedOrders.push(...currentData.map(mapToOrder));
                 } else if (currentData) {
                     formattedOrders.push(mapToOrder(currentData));
                 }
 
                 const allData = allOrdersRes.data;
                 if (Array.isArray(allData)) {
-                    formattedOrders.push(
-                        ...allData.map((o: any) =>
-                            mapToOrder(o)
-                        )
-                    );
+                    formattedOrders.push(...allData.map(mapToOrder));
                 } else if (allData) {
                     formattedOrders.push(mapToOrder(allData));
                 }
 
                 setOrders(formattedOrders);
+
             } catch (error) {
                 console.error("Error fetching orders:", error);
                 toast.error("Failed to load orders");
@@ -136,6 +128,7 @@ const Orders: React.FC = () => {
                 setLoading(false);
             }
         };
+
 
         fetchOrders();
     }, [userId]);
@@ -480,8 +473,8 @@ const Orders: React.FC = () => {
                                                 <div className="flex flex-col items-center">
                                                     <div
                                                         className={`w-10 h-10 rounded-full flex items-center justify-center ${step.completed
-                                                                ? "bg-emerald-600 text-white"
-                                                                : "bg-gray-200 text-gray-400"
+                                                            ? "bg-emerald-600 text-white"
+                                                            : "bg-gray-200 text-gray-400"
                                                             }`}
                                                     >
                                                         {step.completed ? (

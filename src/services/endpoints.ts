@@ -52,6 +52,7 @@ const endpoints = {
     getRatingsStatus: 'api/profile/userstatus?userId=',
 
     // Home Screen Sections
+    homeBrands: 'media/getSection',
     getHomeBanner: 'api/home/banner',
     updateHomeBanner: 'api/home/banner',
 
