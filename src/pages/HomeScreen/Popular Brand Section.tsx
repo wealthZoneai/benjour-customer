@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Wine, Pencil, X, Loader2, Award, Star, TrendingUp } from "lucide-react";
-import { useSelector } from "react-redux";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-hot-toast";
-import type { RootState } from "../../Redux/store";
-import { getHomeBanner, getHomeBrands, updateHomeBrands } from "../../services/apiHelpers";
+import { useEffect, useState } from "react";
+import { Wine, Award, Star, TrendingUp } from "lucide-react";
+// import { useSelector } from "react-redux";
+import { motion } from "framer-motion";
+// import { toast } from "react-hot-toast";
+// import type { RootState } from "../../Redux/store";
+import { getHomeBanner } from "../../services/apiHelpers";
 
 interface BrandData {
   title: string;
@@ -21,9 +21,9 @@ const defaultData: BrandData = {
 };
 
 const BrandSection: React.FC = () => {
-  const { role } = useSelector((state: RootState) => state.user);
+  // const { role } = useSelector((state: RootState) => state.user);
   const [data, setData] = useState<BrandData>(defaultData);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     fetchBanner();
@@ -67,7 +67,7 @@ const BrandSection: React.FC = () => {
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            {data.title}
+            {data?.title}
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Curated selection of premium brands and products
@@ -83,20 +83,20 @@ const BrandSection: React.FC = () => {
           className="relative bg-white rounded-3xl shadow-2xl overflow-hidden group"
         >
           {/* Admin Edit Button */}
-          {role === "ADMIN" && (
+          {/* {role === "ADMIN" && (
             <button
               onClick={() => setIsEditModalOpen(true)}
               className="absolute top-4 right-4 z-20 p-3 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white shadow-lg transition-all opacity-0 group-hover:opacity-100"
             >
               <Pencil size={20} className="text-gray-700" />
             </button>
-          )}
+          )} */}
 
           <div className="grid md:grid-cols-2 gap-0">
             {/* Left - Image */}
             <div className="relative h-[400px] md:h-[500px] overflow-hidden">
               <img
-                src={data.imageUrl}
+                src={data?.imageUrl}
                 alt="Brand"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
@@ -120,12 +120,12 @@ const BrandSection: React.FC = () => {
                 transition={{ delay: 0.3 }}
               >
                 <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  {data.subtitle}
+                  {data?.subtitle}
                 </h3>
                 <div className="w-20 h-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-6" />
 
                 <p className="text-gray-700 text-base leading-relaxed mb-8">
-                  {data.description}
+                  {data?.description}
                 </p>
 
                 {/* Feature Icons */}
