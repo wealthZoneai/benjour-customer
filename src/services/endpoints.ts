@@ -4,6 +4,9 @@ const endpoints = {
     sendEmailOtp: 'api/auth/send-email-otp',
     verifyEmailOtp: "api/Alcohols/auth/verify/user",
 
+    forgotPassword: 'api/Alcohols/auth/forgot-password',
+    resetPassword: 'api/Alcohols/auth/reset-password',
+
     // Dynamic Categories (Main categories like Groceries, Alcohol, Drinks)
     getCurrentOrder: 'api/profile/currentorder/',
     getAllOrders: 'api/profile/orderhistory/',

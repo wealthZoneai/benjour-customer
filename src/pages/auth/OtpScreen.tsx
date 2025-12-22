@@ -6,7 +6,7 @@ import { UserOtp } from "../../services/apiHelpers";
 const OtpScreen: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { email } = location.state || {};
+  const { email, mode } = location.state || {};
 
   const length = 6;
   const [values, setValues] = useState<string[]>(Array(length).fill(""));
@@ -80,11 +80,16 @@ const OtpScreen: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      const response = await UserOtp({email, otp});
+      const response = await UserOtp({ email, otp });
       setLoading(false);
-      if (response.data && response.data === "OTP verified! user account activated.") {
-        toast.success("Register successfully!");
-        navigate("/");
+      if (response.data && (response.data === "OTP verified! user account activated." || response.status === 200)) {
+        if (mode === "forgotPassword") {
+          toast.success("OTP verified!");
+          navigate("/reset-password", { state: { email, otp } });
+        } else {
+          toast.success("Register successfully!");
+          navigate("/");
+        }
       } else {
         setError("Invalid OTP. Please try again.");
         setValues(Array(length).fill(""));
@@ -136,9 +141,8 @@ const OtpScreen: React.FC = () => {
                 value={values[i]}
                 onChange={(e) => handleChange(i, e)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                className={`w-14 h-14 text-center text-xl font-semibold rounded-xl shadow-inner outline-none transition-transform transform focus:scale-105 focus:ring-2 focus:ring-indigo-300 ${
-                  error ? "ring-1 ring-red-200 animate-[shake_300ms]" : "ring-0"
-                }`}
+                className={`w-14 h-14 text-center text-xl font-semibold rounded-xl shadow-inner outline-none transition-transform transform focus:scale-105 focus:ring-2 focus:ring-indigo-300 ${error ? "ring-1 ring-red-200 animate-[shake_300ms]" : "ring-0"
+                  }`}
               />
             </div>
           ))}
@@ -159,11 +163,10 @@ const OtpScreen: React.FC = () => {
         <button
           onClick={() => verifyOtp(values.join(""))}
           disabled={values.join("").length !== length || loading}
-          className={`mt-6 w-full py-2 px-4 rounded-lg font-medium shadow-sm transition-opacity ${
-            values.join("").length === length && !loading
-              ? "bg-gradient-to-r from-indigo-600 to-pink-500 text-white"
-              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-          }`}
+          className={`mt-6 w-full py-2 px-4 rounded-lg font-medium shadow-sm transition-opacity ${values.join("").length === length && !loading
+            ? "bg-gradient-to-r from-indigo-600 to-pink-500 text-white"
+            : "bg-gray-200 text-gray-500 cursor-not-allowed"
+            }`}
         >
           Verify
         </button>

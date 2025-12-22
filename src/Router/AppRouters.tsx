@@ -21,6 +21,8 @@ import AdminOrderScreen from "../pages/Admin/Orders/AdminOrderScreen";
 
 import PrivateRoute from "../utils/PrivateRoute";
 import PublicRoute from "../utils/PublicRoute";
+import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 
 const AppRouters = () => {
   return (
@@ -75,8 +77,14 @@ const AppRouters = () => {
             </PublicRoute>
           }
         />
-        <Route path="/otp"element={ <PublicRoute><OtpScreen /> </PublicRoute>
-          }
+        <Route path="/otp" element={<PublicRoute><OtpScreen /> </PublicRoute>
+        }
+        />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /> </PublicRoute>
+        }
+        />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /> </PublicRoute>
+        }
         />
       </Routes>
     </>

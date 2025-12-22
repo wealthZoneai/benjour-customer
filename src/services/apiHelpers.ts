@@ -26,9 +26,25 @@ export function RegisterUser({ username, email, password }: RegisterUserBody) {
 }
 
 export function UserOtp({ email, otp }: any) {
-  const body = { email, otp };
+  const body = { email, otp, role: "USER" };
   return server.post(endpoints.verifyEmailOtp, body, { requiresAuth: false });
 }
+
+export function sendEmailOtp({ email }: { email: string }) {
+  const body = { email };
+  return server.post(endpoints.sendEmailOtp, body, { requiresAuth: false });
+}
+
+export function forgotPassword({ email }: { email: string }) {
+  const body = { email, role: "USER" };
+  return server.post(endpoints.forgotPassword, body, { requiresAuth: false });
+}
+
+export function resetPassword({ email, password, otp }: { email: string; password: string; otp: string }) {
+  const body = { email, newPassword: password, otp, role: "USER" };
+  return server.post(endpoints.resetPassword, body, { requiresAuth: false });
+}
+
 
 // ============================================
 //  ORDERS SYSTEM
@@ -60,7 +76,14 @@ export function createUserProfile(userId: string, data: any) {
   formData.append("lastName", data.lastName);
   formData.append("phoneNumber", data.phoneNumber);
   formData.append("email", data.email);
-  formData.append("location", data.location);
+  // formData.append("location", data.location); // Deprecated single location field
+  formData.append("altPhoneNumber", data.altPhoneNumber || "");
+  formData.append("addressLine1", data.addressLine1 || "");
+  formData.append("addressLine2", data.addressLine2 || "");
+  formData.append("city", data.city || "");
+  formData.append("state", data.state || "");
+  formData.append("pincode", data.pincode || "");
+  formData.append("country", data.country || "");
   if (data.file) {
     formData.append("file", data.file);
   }
@@ -74,7 +97,14 @@ export function updateUserProfile(userId: string, data: any) {
   formData.append("lastName", data.lastName);
   formData.append("phoneNumber", data.phoneNumber);
   formData.append("email", data.email);
-  formData.append("location", data.location);
+  // formData.append("location", data.location);
+  formData.append("altPhoneNumber", data.altPhoneNumber || "");
+  formData.append("addressLine1", data.addressLine1 || "");
+  formData.append("addressLine2", data.addressLine2 || "");
+  formData.append("city", data.city || "");
+  formData.append("state", data.state || "");
+  formData.append("pincode", data.pincode || "");
+  formData.append("country", data.country || "");
   if (data.file) {
     formData.append("file", data.file);
   }
@@ -309,7 +339,7 @@ export function submitReview(itemId: number, reviewData: ReviewData) {
 
 // Retings Status
 
-export const getRatingsStatus = (userId: string, orderId:string) => {
+export const getRatingsStatus = (userId: string, orderId: string) => {
   return server.get(`${endpoints.getRatingsStatus}${userId}&orderId=${orderId}`, { requiresAuth: true });
 }
 

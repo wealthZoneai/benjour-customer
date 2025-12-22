@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast"; // ✅ Import toast
 import { loginUser } from "../../services/apiHelpers";
@@ -18,6 +19,7 @@ const Login: React.FC = () => {
     confirmPassword: "",
   });
   const [isFlipping, setIsFlipping] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,8 +70,16 @@ const Login: React.FC = () => {
         }
       })
       .catch((error) => {
-        const msg =
-          error.response?.data?.message || "Login failed. Please try again.";
+        let msg = "Login failed. Please try again.";
+        if (error.response) {
+          if (error.response.status === 404) {
+            msg = "User not found. Please check your email.";
+          } else if (error.response.status === 401) {
+            msg = "Incorrect password. Please try again.";
+          } else if (error.response.data && error.response.data.message) {
+            msg = error.response.data.message;
+          }
+        }
         toast.error(msg);
       });
   };
@@ -179,18 +189,25 @@ const Login: React.FC = () => {
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Password
             </label>
-            <div className="flex items-center border border-white/20 bg-white/10 rounded-lg px-3 py-2">
+            <div className="relative flex items-center border border-white/20 bg-white/10 rounded-lg px-3 py-2">
               <FaLock className="text-gray-400 mr-2" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder={
                   isLogin ? "Enter your password" : "Create a password"
                 }
-                className="w-full bg-transparent outline-none text-sm text-white placeholder-gray-400"
+                className="w-full bg-transparent outline-none text-sm text-white placeholder-gray-400 pr-8"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
@@ -214,7 +231,10 @@ const Login: React.FC = () => {
           )}
 
           {isLogin && (
-            <div className="text-right text-xs text-sky-400 hover:underline cursor-pointer">
+            <div
+              className="text-right text-xs text-sky-400 hover:underline cursor-pointer"
+              onClick={() => navigate("/forgot-password")}
+            >
               Forgot Password?
             </div>
           )}
